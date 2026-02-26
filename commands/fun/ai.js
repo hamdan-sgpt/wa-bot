@@ -9,7 +9,9 @@ const genAI = new GoogleGenerativeAI(config.geminiApiKey);
 const chatHistory = {};
 
 // ── File kredit ──
-const CREDIT_FILE = path.join(__dirname, '../../data/ai_credits.json');
+const DATA_DIR = path.join(__dirname, '../../data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const CREDIT_FILE = path.join(DATA_DIR, 'ai_credits.json');
 
 function loadCredits() {
   if (!fs.existsSync(CREDIT_FILE)) return {};

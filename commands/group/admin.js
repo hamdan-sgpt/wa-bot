@@ -2,9 +2,12 @@ const config = require('../../config');
 const fs = require('fs');
 const path = require('path');
 
+const DATA_DIR = path.join(__dirname, '../../data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
 // Load or init per-group settings
 function getGroupData(groupId) {
-  const filePath = path.join(__dirname, '../../data', `${groupId}.json`);
+  const filePath = path.join(DATA_DIR, `${groupId}.json`);
   if (!fs.existsSync(filePath)) {
     const defaults = {
       antiLink: config.features.antiLink,
@@ -22,7 +25,7 @@ function getGroupData(groupId) {
 }
 
 function saveGroupData(groupId, data) {
-  const filePath = path.join(__dirname, '../../data', `${groupId}.json`);
+  const filePath = path.join(DATA_DIR, `${groupId}.json`);
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
