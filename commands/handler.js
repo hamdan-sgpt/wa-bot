@@ -3,6 +3,7 @@ const { adminCommands, getGroupData, saveGroupData } = require('./group/admin');
 const { tagAll } = require('./group/tagall');
 const { handleAntiLink } = require('./group/antilink');
 const { handleAntiSpam } = require('./group/antispam');
+const { addBabu, listBabu, delBabu, addBabuNote } = require('./group/babu');
 const { aiChat, aiCharge, aiCredits, aiReset } = require('./fun/ai');
 const { dice, flip, randomQuote, calculator, ping } = require('./fun/games');
 const { toSticker, toImage } = require('./fun/sticker');
@@ -62,6 +63,18 @@ async function handleMessage(client, msg) {
   if (cmd === 'tagall' || cmd === 'everyone') {
     if (!isGroup) return msg.reply('❌ Perintah ini hanya bisa digunakan di dalam grup!');
     await tagAll(client, msg, args);
+    return;
+  }
+
+  // ── BABU LIST COMMANDS ──
+  if (['addbabu', 'listbabu', 'delbabu', 'notebabu'].includes(cmd)) {
+    if (!isGroup) return msg.reply('❌ Perintah ini hanya bisa digunakan di dalam grup!');
+    switch (cmd) {
+      case 'addbabu': await addBabu(client, msg, args); break;
+      case 'listbabu': await listBabu(client, msg); break;
+      case 'delbabu': await delBabu(client, msg, args); break;
+      case 'notebabu': await addBabuNote(client, msg, args); break;
+    }
     return;
   }
 
