@@ -1,6 +1,6 @@
 const config = require('../config');
 const { adminCommands, getGroupData, saveGroupData } = require('./group/admin');
-const { tagAll, tagAdmin } = require('./group/tagall');
+const { tagAll, tagAdmin, tagGroup } = require('./group/tagall');
 const { handleAntiLink } = require('./group/antilink');
 const { handleAntiSpam } = require('./group/antispam');
 const { addBabu, listBabu, delBabu, addBabuNote } = require('./group/babu');
@@ -87,6 +87,12 @@ async function handleMessage(client, msg) {
   if (cmd === 'tagadmin' || cmd === 'admin') {
     if (!isGroup) return msg.reply('❌ Perintah ini hanya bisa digunakan di dalam grup!');
     await tagAdmin(client, msg, args);
+    return;
+  }
+
+  // ── TAG GROUP (BROADCAST) ──
+  if (cmd === 'taggroup' || cmd === 'bcgroup') {
+    await tagGroup(client, msg, args);
     return;
   }
 

@@ -58,4 +58,41 @@ async function tagAdmin(client, msg, args) {
   await group.sendMessage(mentionText, { mentions: mentionIds });
 }
 
-module.exports = { tagAll, tagAdmin };
+// Tag / Broadcast to all groups the bot is in
+async function tagGroup(client, msg, args) {
+  const customMsg = args.slice(1).join(' ');
+  if (!customMsg) return msg.reply('❌ Masukkan pesan yang ingin di-broadcast!\nContoh: !taggroup Pengumuman penting!');
+
+  // Security check: Only owners should broadcast to all groups
+  const senderNumber = (await msg.getContact()).id._serialized;
+  const isOwner = require('../../config').owners.includes(senderNumber);
+  if (!isOwner) {
+    return msg.reply('❌ Perintah ini hanya bisa digunakan oleh *Owner Bot*!');
+  }
+
+  const chats = await client.getChats();
+  const groups = chats.filter(chat => chat.isGroup);
+  let successCount = 0;
+
+  const broadcastMsg = 
+    `╔══════════════════════╗\n` +
+    `║  📢 *BROADCAST PUSAT* ║\n` +
+    `╚══════════════════════╝\n\n` +
+    `💬 *Pesan:*\n${customMsg}\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━`;
+
+  await msg.reply(`⏳ Sedang mengirim broadcast ke ${groups.length} grup...`);
+
+  for (const group of groups) {
+    try {
+      await group.sendMessage(broadcastMsg);
+      successCount++;
+    } catch (err) {
+      console.error(`Gagal kirim ke grup ${group.name}:`, err.message);
+    }
+  }
+
+  await msg.reply(`✅ Broadcast selesai! Terkirim ke *${successCount}/${groups.length}* grup.`);
+}
+
+module.exports = { tagAll, tagAdmin, tagGroup };
