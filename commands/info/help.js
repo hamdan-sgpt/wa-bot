@@ -24,6 +24,7 @@ const MENUS = {
       [`${p}link`, 'Dapatkan link undangan'],
       [`${p}revoke`, 'Reset link undangan'],
       [`${p}tagall [pesan]`, 'Mention semua member'],
+      [`${p}tagadmin [pesan]`, 'Mention semua admin'],
       [`${p}antilink on/off`, 'Toggle anti-link'],
       [`${p}antispam on/off`, 'Toggle anti-spam'],
       [`${p}setwelcome [teks]`, 'Set pesan welcome'],
