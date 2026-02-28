@@ -30,6 +30,8 @@ const MENUS = {
       [`${p}setwelcome [teks]`, 'Set pesan welcome'],
       [`${p}setbye [teks]`, 'Set pesan goodbye'],
       [`${p}welcome on/off`, 'Toggle welcome msg'],
+      [`${p}adminonly`, 'Lihat status admin-only'],
+      [`${p}adminonly [cmd] on/off`, 'Toggle admin-only'],
     ],
   },
   babu: {

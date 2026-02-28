@@ -19,7 +19,7 @@ const prefix = config.prefix;
 const groupAdminCommands = [
   'kick', 'remove', 'add', 'promote', 'demote', 'mute', 'unmute',
   'setname', 'setdesc', 'link', 'revoke', 'antilink', 'antispam',
-  'setwelcome', 'setbye', 'welcome',
+  'setwelcome', 'setbye', 'welcome', 'adminonly',
 ];
 
 async function handleMessage(client, msg) {
@@ -57,6 +57,23 @@ async function handleMessage(client, msg) {
     if (!isGroup) return msg.reply('❌ Perintah ini hanya bisa digunakan di dalam grup!');
     await adminCommands(client, msg, args, groupData, chat, contact);
     return;
+  }
+
+  // ── ADMIN-ONLY CHECK for non-admin commands ──
+  if (isGroup && groupData) {
+    const adminOnlyList = groupData.adminOnly || [];
+    if (adminOnlyList.includes(cmd)) {
+      const sender = await msg.getContact();
+      const senderNumber = sender.id._serialized;
+      const isOwner = require('../config').owners.includes(senderNumber);
+      const participants = chat.participants;
+      const senderParticipant = participants.find(p => p.id._serialized === senderNumber);
+      const isAdmin = senderParticipant?.isAdmin || senderParticipant?.isSuperAdmin || isOwner;
+
+      if (!isAdmin) {
+        return msg.reply(`🔒 Command \`!${cmd}\` hanya bisa dipakai oleh *admin*!`);
+      }
+    }
   }
 
   // ── TAG ALL ──

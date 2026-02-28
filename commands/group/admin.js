@@ -5,6 +5,15 @@ const path = require('path');
 const DATA_DIR = path.join(__dirname, '../../data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
+// Commands yang bisa di-toggle admin-only
+const TOGGLEABLE_COMMANDS = [
+  'addbabu', 'delbabu', 'listbabu', 'notebabu',
+  'tagall', 'tagadmin',
+  'sticker', 'toimg', 'brat',
+  'ai', 'dice', 'flip', 'quote', 'calc', 'ping',
+  'tt', 'ttaudio',
+];
+
 // Load or init per-group settings
 function getGroupData(groupId) {
   const filePath = path.join(DATA_DIR, `${groupId}.json`);
@@ -17,6 +26,7 @@ function getGroupData(groupId) {
       welcomeMsg: '👋 Selamat datang @user di grup *@group*!',
       goodbyeMsg: '👋 Sampai jumpa @user, selamat tinggal!',
       warns: {},
+      adminOnly: [],  // commands yang hanya bisa dipakai admin
     };
     fs.writeFileSync(filePath, JSON.stringify(defaults, null, 2));
     return defaults;
@@ -194,6 +204,45 @@ async function adminCommands(client, msg, args, groupData, chat, contact) {
       groupData.welcome = toggle === 'on';
       saveGroupData(group.id._serialized, groupData);
       await msg.reply(`👋 Fitur welcome *${toggle === 'on' ? 'diaktifkan' : 'dinonaktifkan'}*!`);
+      break;
+    }
+    case 'adminonly': {
+      const targetCmd = args[1]?.toLowerCase();
+      const toggle = args[2]?.toLowerCase();
+
+      // Tanpa argumen = tampilkan status semua command
+      if (!targetCmd) {
+        if (!groupData.adminOnly) groupData.adminOnly = [];
+        let statusText = '🔒 *ADMIN-ONLY SETTINGS*\n\n';
+        for (const cmd of TOGGLEABLE_COMMANDS) {
+          const isLocked = groupData.adminOnly.includes(cmd);
+          statusText += `${isLocked ? '🔒' : '🔓'} \`!${cmd}\` — ${isLocked ? 'Admin Only' : 'Semua Member'}\n`;
+        }
+        statusText += `\n💡 Gunakan: !adminonly <command> on/off`;
+        return msg.reply(statusText);
+      }
+
+      if (!TOGGLEABLE_COMMANDS.includes(targetCmd)) {
+        return msg.reply(`❌ Command \`!${targetCmd}\` tidak bisa di-toggle.\n\n📋 Command yang bisa di-toggle:\n${TOGGLEABLE_COMMANDS.map(c => `• !${c}`).join('\n')}`);
+      }
+
+      if (!['on', 'off'].includes(toggle)) {
+        return msg.reply(`❌ Gunakan: !adminonly ${targetCmd} on/off`);
+      }
+
+      if (!groupData.adminOnly) groupData.adminOnly = [];
+
+      if (toggle === 'on') {
+        if (!groupData.adminOnly.includes(targetCmd)) {
+          groupData.adminOnly.push(targetCmd);
+        }
+        saveGroupData(group.id._serialized, groupData);
+        await msg.reply(`🔒 Command \`!${targetCmd}\` sekarang *Admin Only*!`);
+      } else {
+        groupData.adminOnly = groupData.adminOnly.filter(c => c !== targetCmd);
+        saveGroupData(group.id._serialized, groupData);
+        await msg.reply(`🔓 Command \`!${targetCmd}\` sekarang bisa dipakai *semua member*!`);
+      }
       break;
     }
     default:
