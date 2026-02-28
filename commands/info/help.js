@@ -93,6 +93,20 @@ const MENUS = {
       [`${p}info`, 'Info bot'],
     ],
   },
+  role: {
+    emoji: '🎭',
+    title: 'ROLE & VERIFIKASI',
+    desc: 'Sistem limit fitur & akses',
+    items: [
+      [`${p}claim`, 'Verifikasi untuk main bot'],
+      [`${p}myrole`, 'Cek role kamu saat ini'],
+      [`${p}roleinfo`, 'Lihat seluruh role yang ada'],
+      [`${p}addrole [id] [limit] [nama]`, 'Buat role (Owner)'],
+      [`${p}delrole [id]`, 'Hapus role (Owner)'],
+      [`${p}setrole @user [id]`, 'Beri role (Owner)'],
+      [`${p}removerole @user`, 'Cabut role (Owner)'],
+    ],
+  },
 };
 
 /**

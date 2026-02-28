@@ -12,6 +12,7 @@ const { bratSticker } = require('./fun/brat');
 const { showHelp } = require('./info/help');
 const { showIntro } = require('./info/intro');
 const { runtime, botInfo } = require('./info/runtime');
+const { hasRole, claimRole, addRole, delRole, setRole, removeRole, roleInfo, myRole } = require('./info/roles');
 
 const prefix = config.prefix;
 
@@ -50,6 +51,23 @@ async function handleMessage(client, msg) {
 
   if (!cmd) return;
 
+  const senderId = contact.id._serialized;
+  const isOwner = require('../config').owners.includes(senderId);
+
+  // ── ROLE CLAIM CHECK ──
+  // Commands that can be executed without claiming a role
+  const exemptCommands = ['claim', 'claimrole', 'help', 'menu', 'bantuan', 'start', 'intro'];
+  
+  if (!isOwner && !exemptCommands.includes(cmd)) {
+    if (!hasRole(senderId)) {
+      return msg.reply(
+        `⛔ *Akses Ditolak!*\n\n` +
+        `Kamu belum terdaftar di sistem bot ini.\n` +
+        `Silakan ketik \`!claim\` untuk mendapatkan role dan mulai menggunakan bot.`
+      );
+    }
+  }
+
   const groupData = isGroup ? getGroupData(chat.id._serialized) : null;
 
   // ── GROUP ADMIN COMMANDS ──
@@ -64,10 +82,7 @@ async function handleMessage(client, msg) {
     const adminOnlyList = groupData.adminOnly || [];
     if (adminOnlyList.includes(cmd)) {
       const sender = await msg.getContact();
-      const senderNumber = sender.id._serialized;
-      const isOwner = require('../config').owners.includes(senderNumber);
-      const participants = chat.participants;
-      const senderParticipant = participants.find(p => p.id._serialized === senderNumber);
+      const senderParticipant = participants.find(p => p.id._serialized === senderId);
       const isAdmin = senderParticipant?.isAdmin || senderParticipant?.isSuperAdmin || isOwner;
 
       if (!isAdmin) {
@@ -193,6 +208,31 @@ async function handleMessage(client, msg) {
 
     case 'info':
       await botInfo(client, msg);
+      break;
+
+    // ── ROLE COMMANDS ──
+    case 'claim':
+    case 'claimrole':
+      await claimRole(msg);
+      break;
+    case 'addrole':
+      await addRole(msg, args);
+      break;
+    case 'delrole':
+      await delRole(msg, args);
+      break;
+    case 'setrole':
+      await setRole(msg, args);
+      break;
+    case 'removerole':
+      await removeRole(msg, args);
+      break;
+    case 'roleinfo':
+    case 'roles':
+      await roleInfo(msg);
+      break;
+    case 'myrole':
+      await myRole(msg);
       break;
 
     default:

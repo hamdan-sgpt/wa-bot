@@ -2,6 +2,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const config = require('../../config');
 const fs   = require('fs');
 const path = require('path');
+const { getUserRole } = require('../info/roles');
 
 const genAI = new GoogleGenerativeAI(config.geminiApiKey);
 
@@ -22,10 +23,18 @@ function saveCredits(data) {
   fs.writeFileSync(CREDIT_FILE, JSON.stringify(data, null, 2));
 }
 
+function getUserCreditsLimit(userId) {
+  const role = getUserRole(userId);
+  if (role && role.dailyLimit !== undefined) {
+    return role.dailyLimit;
+  }
+  return config.aiCredits.defaultCredits;
+}
+
 function getUser(credits, userId) {
   if (!credits[userId]) {
     credits[userId] = {
-      balance: config.aiCredits.defaultCredits,
+      balance: getUserCreditsLimit(userId),
       lastReset: new Date().toDateString(),
       totalUsed: 0,
     };
@@ -33,11 +42,11 @@ function getUser(credits, userId) {
   return credits[userId];
 }
 
-function checkDailyReset(user) {
+function checkDailyReset(user, userId) {
   if (!config.aiCredits.dailyReset) return;
   const today = new Date().toDateString();
   if (user.lastReset !== today) {
-    user.balance   = config.aiCredits.defaultCredits;
+    user.balance   = getUserCreditsLimit(userId);
     user.lastReset = today;
   }
 }
@@ -72,7 +81,7 @@ async function aiChat(msg, args) {
   if (config.aiCredits.enabled && !isUnlimited) {
     const credits = loadCredits();
     const user    = getUser(credits, userId);
-    checkDailyReset(user);
+    checkDailyReset(user, userId);
 
     if (user.balance <= 0) {
       return msg.reply(
@@ -195,7 +204,7 @@ async function aiCharge(client, msg, args) {
   for (const target of mentioned) {
     const targetId = target.id._serialized;
     const user     = getUser(credits, targetId);
-    checkDailyReset(user);
+    checkDailyReset(user, targetId);
     user.balance = Math.min(user.balance + amount, config.aiCredits.maxCredits);
     await msg.reply(
       `✅ *Kredit AI berhasil di-charge!*\n\n` +
@@ -219,7 +228,7 @@ async function aiCredits(msg) {
 
   const credits = loadCredits();
   const user    = getUser(credits, userId);
-  checkDailyReset(user);
+  checkDailyReset(user, userId);
   saveCredits(credits);
 
   await msg.reply(
