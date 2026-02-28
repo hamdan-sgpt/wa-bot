@@ -31,6 +31,17 @@ const MENUS = {
       [`${p}welcome on/off`, 'Toggle welcome msg'],
     ],
   },
+  babu: {
+    emoji: '📋',
+    title: 'LIST BABU',
+    desc: 'Kelola list hewan ternak Vourgood',
+    items: [
+      [`${p}addbabu [nama]`, 'Tambah babu baru + auto-pin'],
+      [`${p}listbabu`, 'Lihat semua list babu'],
+      [`${p}delbabu [nomor]`, 'Hapus babu dari list'],
+      [`${p}notebabu [no] [catatan]`, 'Tambah catatan ke babu'],
+    ],
+  },
   fun: {
     emoji: '🎮',
     title: 'FUN & UTILITY',
