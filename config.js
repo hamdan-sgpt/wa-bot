@@ -7,7 +7,7 @@ module.exports = {
 
   // Nomor owner (format: 628xxx@c.us) — ganti dengan nomormu
   // Bisa lebih dari satu
-  owners: ['628XXXXXXXXXX@c.us'],
+  owners: ['6281456099028@c.us'],
 
   // ==================== GEMINI AI ====================
   geminiApiKey: 'AIzaSyDxuJ8ckx3wvePlPXLSKDfRTS-1N7mSD1A',
