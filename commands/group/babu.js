@@ -133,23 +133,45 @@ const INITIAL_BABU = [
   { name: "ZERELETHAL", note: "" },
 ];
 
+// ── In-memory cache (primary source of truth) ──
+let cachedList = null;
+
 // ── Load & Save ──
 function loadBabuList() {
+  // Return cached list if available
+  if (cachedList !== null) return cachedList;
+
   try {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    if (!fs.existsSync(BABU_FILE)) {
-      // Seed initial data on first run
-      saveBabuList(INITIAL_BABU);
-      return [...INITIAL_BABU];
+    if (fs.existsSync(BABU_FILE)) {
+      const data = fs.readFileSync(BABU_FILE, 'utf8');
+      cachedList = JSON.parse(data);
+      console.log(`📋 Loaded ${cachedList.length} babu from file`);
+      return cachedList;
     }
-    return JSON.parse(fs.readFileSync(BABU_FILE, 'utf8'));
-  } catch {
-    return [...INITIAL_BABU];
+  } catch (err) {
+    console.error('⚠️ Error loading babu list from file:', err.message);
   }
+
+  // First run or file error — seed initial data
+  cachedList = [...INITIAL_BABU];
+  saveBabuList(cachedList);
+  console.log(`📋 Seeded ${cachedList.length} initial babu`);
+  return cachedList;
 }
 
 function saveBabuList(list) {
-  fs.writeFileSync(BABU_FILE, JSON.stringify(list, null, 2));
+  // Always update cache first
+  cachedList = list;
+
+  // Then try to persist to file
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(BABU_FILE, JSON.stringify(list, null, 2));
+  } catch (err) {
+    console.error('⚠️ Error saving babu list to file:', err.message);
+    // Data is still in memory cache, so commands will still work
+  }
 }
 
 // ── Format list ──
