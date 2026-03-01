@@ -1,10 +1,6 @@
-const fs = require('fs');
-const path = require('path');
+const { readBin, writeBin } = require('../../utils/jsonbin');
 
-const config = require('../../config');
-
-const DATA_DIR = path.resolve(config.dataPath);
-const BABU_FILE = path.join(DATA_DIR, 'babu_list.json');
+const BABU_BIN_ID = process.env.JSONBIN_BABU_BIN_ID;
 
 // ── Initial seed data (132 babu) ──
 const INITIAL_BABU = [
@@ -139,47 +135,44 @@ const INITIAL_BABU = [
   { name: "SLINSE ALLBASE", note: "" },
   { name: "SALVATRIX17", note: "" },
   { name: "savael", note: "" },
-  { name: "VLAIMUNOX ANTI HAMA", note: "IZIN CB" }
+  { name: "VLAIMUNOX ANTI HAMA", note: "IZIN CB" },
 ];
 
-// ── In-memory cache (primary source of truth) ──
+// ── In-memory cache ──
 let cachedList = null;
 
-// ── Load & Save ──
-function loadBabuList() {
-  // Return cached list if available
+async function loadBabuList() {
   if (cachedList !== null) return cachedList;
 
-  try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    if (fs.existsSync(BABU_FILE)) {
-      const data = fs.readFileSync(BABU_FILE, 'utf8');
-      cachedList = JSON.parse(data);
-      console.log(`📋 Loaded ${cachedList.length} babu from file`);
-      return cachedList;
-    }
-  } catch (err) {
-    console.error('⚠️ Error loading babu list from file:', err.message);
+  if (!BABU_BIN_ID) {
+    console.warn('⚠️ JSONBIN_BABU_BIN_ID not set! Using in-memory initial data.');
+    cachedList = [...INITIAL_BABU];
+    return cachedList;
   }
 
-  // First run or file error — seed initial data
-  cachedList = [...INITIAL_BABU];
-  saveBabuList(cachedList);
-  console.log(`📋 Seeded ${cachedList.length} initial babu`);
-  return cachedList;
+  try {
+    cachedList = await readBin(BABU_BIN_ID);
+    console.log(`📋 Loaded ${cachedList.length} babu from JSONBin`);
+    return cachedList;
+  } catch (err) {
+    console.error('⚠️ Error loading babu list from JSONBin:', err.message);
+    cachedList = [...INITIAL_BABU];
+    return cachedList;
+  }
 }
 
-function saveBabuList(list) {
-  // Always update cache first
+async function saveBabuList(list) {
   cachedList = list;
 
-  // Then try to persist to file
+  if (!BABU_BIN_ID) {
+    console.warn('⚠️ JSONBIN_BABU_BIN_ID not set! Data only in memory.');
+    return;
+  }
+
   try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(BABU_FILE, JSON.stringify(list, null, 2));
+    await writeBin(BABU_BIN_ID, list);
   } catch (err) {
-    console.error('⚠️ Error saving babu list to file:', err.message);
-    // Data is still in memory cache, so commands will still work
+    console.error('⚠️ Error saving babu list to JSONBin:', err.message);
   }
 }
 
@@ -203,24 +196,23 @@ async function addBabu(client, msg, args) {
     return msg.reply('❌ Masukkan nama babu!\nContoh: !addbabu NAMA BABU');
   }
 
-  const list = loadBabuList();
+  const list = await loadBabuList();
   list.push({ name: name, note: '' });
-  saveBabuList(list);
+  await saveBabuList(list);
 
   const chat = await msg.getChat();
   const listText = formatBabuList(list);
   const sentMsg = await chat.sendMessage(`✅ *${name}* berhasil ditambahkan sebagai babu #${list.length}!\n\n${listText}`);
 
-  // Auto-pin the message
   try {
-    await sentMsg.pin(604800); // pin for 7 days (max)
+    await sentMsg.pin(604800);
   } catch (err) {
     console.log('⚠️ Gagal pin message:', err.message);
   }
 }
 
 async function listBabu(client, msg) {
-  const list = loadBabuList();
+  const list = await loadBabuList();
   const listText = formatBabuList(list);
   await msg.reply(listText);
 }
@@ -231,19 +223,18 @@ async function delBabu(client, msg, args) {
     return msg.reply('❌ Masukkan nomor babu yang mau dihapus!\nContoh: !delbabu 5');
   }
 
-  const list = loadBabuList();
+  const list = await loadBabuList();
   if (num < 1 || num > list.length) {
     return msg.reply(`❌ Nomor tidak valid! List babu saat ini: 1 - ${list.length}`);
   }
 
   const removed = list.splice(num - 1, 1)[0];
-  saveBabuList(list);
+  await saveBabuList(list);
 
   const chat = await msg.getChat();
   const listText = formatBabuList(list);
   const sentMsg = await chat.sendMessage(`🗑️ *${removed.name}* berhasil dihapus dari list!\n\n${listText}`);
 
-  // Auto-pin the updated list
   try {
     await sentMsg.pin(604800);
   } catch (err) {
@@ -252,7 +243,6 @@ async function delBabu(client, msg, args) {
 }
 
 async function addBabuNote(client, msg, args) {
-  // !notebabu <nomor> <catatan>
   const num = parseInt(args[1]);
   if (!num || isNaN(num)) {
     return msg.reply('❌ Format: !notebabu <nomor> <catatan>\nContoh: !notebabu 30 KACUNG GAADA PERLAWANAN');
@@ -263,13 +253,13 @@ async function addBabuNote(client, msg, args) {
     return msg.reply('❌ Masukkan catatan!\nContoh: !notebabu 30 KACUNG GAADA PERLAWANAN');
   }
 
-  const list = loadBabuList();
+  const list = await loadBabuList();
   if (num < 1 || num > list.length) {
     return msg.reply(`❌ Nomor tidak valid! List babu saat ini: 1 - ${list.length}`);
   }
 
   list[num - 1].note = note;
-  saveBabuList(list);
+  await saveBabuList(list);
   await msg.reply(`✅ Catatan untuk *${list[num - 1].name}* diupdate: (${note})`);
 }
 

@@ -23,18 +23,18 @@ function saveCredits(data) {
   fs.writeFileSync(CREDIT_FILE, JSON.stringify(data, null, 2));
 }
 
-function getUserCreditsLimit(userId) {
-  const role = getUserRole(userId);
+async function getUserCreditsLimit(userId) {
+  const role = await getUserRole(userId);
   if (role && role.dailyLimit !== undefined) {
     return role.dailyLimit;
   }
   return config.aiCredits.defaultCredits;
 }
 
-function getUser(credits, userId) {
+async function getUser(credits, userId) {
   if (!credits[userId]) {
     credits[userId] = {
-      balance: getUserCreditsLimit(userId),
+      balance: await getUserCreditsLimit(userId),
       lastReset: new Date().toDateString(),
       totalUsed: 0,
     };
@@ -42,11 +42,11 @@ function getUser(credits, userId) {
   return credits[userId];
 }
 
-function checkDailyReset(user, userId) {
+async function checkDailyReset(user, userId) {
   if (!config.aiCredits.dailyReset) return;
   const today = new Date().toDateString();
   if (user.lastReset !== today) {
-    user.balance   = getUserCreditsLimit(userId);
+    user.balance   = await getUserCreditsLimit(userId);
     user.lastReset = today;
   }
 }
@@ -80,8 +80,8 @@ async function aiChat(msg, args) {
   // ── Cek & kurangi kredit ──
   if (config.aiCredits.enabled && !isUnlimited) {
     const credits = loadCredits();
-    const user    = getUser(credits, userId);
-    checkDailyReset(user, userId);
+    const user    = await getUser(credits, userId);
+    await checkDailyReset(user, userId);
 
     if (user.balance <= 0) {
       return msg.reply(
@@ -151,7 +151,7 @@ async function aiChat(msg, args) {
     let creditInfo = '';
     if (config.aiCredits.enabled && !isUnlimited) {
       const credits = loadCredits();
-      const user    = getUser(credits, userId);
+      const user    = await getUser(credits, userId);
       creditInfo    = `\n\n_💳 Kredit tersisa: ${user.balance}_`;
     }
 
@@ -162,7 +162,7 @@ async function aiChat(msg, args) {
     // Kembalikan kredit jika error
     if (config.aiCredits.enabled && !isUnlimited) {
       const credits = loadCredits();
-      const user    = getUser(credits, userId);
+      const user    = await getUser(credits, userId);
       user.balance++;
       user.totalUsed = Math.max(0, user.totalUsed - 1);
       saveCredits(credits);
@@ -203,8 +203,8 @@ async function aiCharge(client, msg, args) {
   const credits = loadCredits();
   for (const target of mentioned) {
     const targetId = target.id._serialized;
-    const user     = getUser(credits, targetId);
-    checkDailyReset(user, targetId);
+    const user     = await getUser(credits, targetId);
+    await checkDailyReset(user, targetId);
     user.balance = Math.min(user.balance + amount, config.aiCredits.maxCredits);
     await msg.reply(
       `✅ *Kredit AI berhasil di-charge!*\n\n` +
@@ -227,8 +227,8 @@ async function aiCredits(msg) {
   if (isOwner) return msg.reply('👑 Kamu adalah *owner bot* — tidak ada limit kredit!');
 
   const credits = loadCredits();
-  const user    = getUser(credits, userId);
-  checkDailyReset(user, userId);
+  const user    = await getUser(credits, userId);
+  await checkDailyReset(user, userId);
   saveCredits(credits);
 
   await msg.reply(

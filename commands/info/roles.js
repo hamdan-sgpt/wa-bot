@@ -1,46 +1,62 @@
-const fs = require('fs');
-const path = require('path');
+const { readBin, writeBin } = require('../../utils/jsonbin');
 const config = require('../../config');
 
-// Use config.dataPath instead of hardcoded relative path
-const DATA_DIR = path.resolve(config.dataPath);
-const ROLES_FILE = path.join(DATA_DIR, 'roles.json');
+const ROLES_BIN_ID = process.env.JSONBIN_ROLES_BIN_ID;
 
-// Initialize empty roles file if it doesn't exist.
-// roles format: { "role_id": { name, dailyLimit, isDefaultClaim: boolean } }
-// users format: { "user_number": "role_id" }
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!fs.existsSync(ROLES_FILE)) {
-  const initialData = {
-    roles: {
-      "member": {
-        name: "Member Baru",
-        dailyLimit: config.aiCredits.defaultCredits,
-        isDefaultClaim: true
-      }
-    },
-    users: {}
-  };
-  fs.writeFileSync(ROLES_FILE, JSON.stringify(initialData, null, 2));
-}
+const INITIAL_ROLES_DATA = {
+  roles: {
+    "member": {
+      name: "Member Baru",
+      dailyLimit: config.aiCredits.defaultCredits,
+      isDefaultClaim: true
+    }
+  },
+  users: {}
+};
 
-function loadRolesData() {
+// ── In-memory cache ──
+let cachedRoles = null;
+
+async function loadRolesData() {
+  if (cachedRoles !== null) return cachedRoles;
+
+  if (!ROLES_BIN_ID) {
+    console.warn('⚠️ JSONBIN_ROLES_BIN_ID not set! Using in-memory default roles.');
+    cachedRoles = JSON.parse(JSON.stringify(INITIAL_ROLES_DATA));
+    return cachedRoles;
+  }
+
   try {
-    return JSON.parse(fs.readFileSync(ROLES_FILE, 'utf8'));
+    cachedRoles = await readBin(ROLES_BIN_ID);
+    console.log(`📋 Loaded roles data from JSONBin`);
+    return cachedRoles;
   } catch (err) {
-    return { roles: {}, users: {} };
+    console.error('⚠️ Error loading roles from JSONBin:', err.message);
+    cachedRoles = JSON.parse(JSON.stringify(INITIAL_ROLES_DATA));
+    return cachedRoles;
   }
 }
 
-function saveRolesData(data) {
-  fs.writeFileSync(ROLES_FILE, JSON.stringify(data, null, 2));
+async function saveRolesData(data) {
+  cachedRoles = data;
+
+  if (!ROLES_BIN_ID) {
+    console.warn('⚠️ JSONBIN_ROLES_BIN_ID not set! Data only in memory.');
+    return;
+  }
+
+  try {
+    await writeBin(ROLES_BIN_ID, data);
+  } catch (err) {
+    console.error('⚠️ Error saving roles to JSONBin:', err.message);
+  }
 }
 
 /**
  * Get user's role ID and details
  */
-function getUserRole(userId) {
-  const data = loadRolesData();
+async function getUserRole(userId) {
+  const data = await loadRolesData();
   const roleId = data.users[userId];
   if (!roleId || !data.roles[roleId]) return null;
   return { id: roleId, ...data.roles[roleId] };
@@ -49,8 +65,8 @@ function getUserRole(userId) {
 /**
  * Check if a user has claimed any role
  */
-function hasRole(userId) {
-  const data = loadRolesData();
+async function hasRole(userId) {
+  const data = await loadRolesData();
   return !!data.users[userId];
 }
 
@@ -58,27 +74,24 @@ function hasRole(userId) {
 
 /**
  * !claim
- * Action for normal users to register themselves to the bot system
  */
 async function claimRole(msg) {
   const senderId = (await msg.getContact()).id._serialized;
-  
+
   if (config.owners.includes(senderId)) {
     return msg.reply('👑 Kamu adalah *Owner Bot*, tidak perlu claim role!');
   }
 
-  const data = loadRolesData();
+  const data = await loadRolesData();
 
   if (data.users[senderId]) {
     const currentRole = data.roles[data.users[senderId]];
     return msg.reply(`⚠️ Kamu sudah mengklaim role *${currentRole ? currentRole.name : data.users[senderId]}*!`);
   }
 
-  // Find the default role to give upon claim
   let defaultRoleId = Object.keys(data.roles).find(id => data.roles[id].isDefaultClaim);
-  
+
   if (!defaultRoleId) {
-    // Failsafe if default claim role is deleted
     defaultRoleId = 'member';
     data.roles[defaultRoleId] = {
       name: 'Member Baru',
@@ -87,18 +100,15 @@ async function claimRole(msg) {
     };
   }
 
-  // Give the role
   data.users[senderId] = defaultRoleId;
-  saveRolesData(data);
+  await saveRolesData(data);
 
   const roleName = data.roles[defaultRoleId].name;
   await msg.reply(`✅ *Selamat!* Kamu berhasil verifikasi dan mendapatkan role *${roleName}*.\n\nSekarang kamu bisa menggunakan semua fitur bot. Ketik \`!help\` untuk melihat menu.`);
 }
 
-
 /**
  * !addrole <role_id> <daily_limit> [name...]
- * Example: !addrole vip 50 Member VIP
  */
 async function addRole(msg, args) {
   const senderId = (await msg.getContact()).id._serialized;
@@ -112,14 +122,14 @@ async function addRole(msg, args) {
     return msg.reply('❌ Format salah!\nGunakan: `!addrole <role_id> <daily_limit> [Nama Role]`\nContoh: `!addrole premium 100 User Premium`');
   }
 
-  const data = loadRolesData();
+  const data = await loadRolesData();
   data.roles[roleId] = {
     name: roleName,
     dailyLimit: dailyLimit,
     features: [],
-    isDefaultClaim: false // New roles created by command aren't default claim by default
+    isDefaultClaim: false
   };
-  saveRolesData(data);
+  await saveRolesData(data);
 
   await msg.reply(`✅ Role *${roleName}* (${roleId}) berhasil dibuat dengan limit AI harian *${dailyLimit}*.`);
 }
@@ -134,15 +144,15 @@ async function delRole(msg, args) {
   const roleId = args[1]?.toLowerCase();
   if (!roleId) return msg.reply('❌ Masukkan role ID!\nContoh: `!delrole premium`');
 
-  const data = loadRolesData();
+  const data = await loadRolesData();
   if (!data.roles[roleId]) return msg.reply('❌ Role tidak ditemukan!');
 
   if (data.roles[roleId].isDefaultClaim) {
-    return msg.reply('❌ Tidak bisa menghapus role default untuk `!claim`. Ubah default role di file database langsung jika perlu.');
+    return msg.reply('❌ Tidak bisa menghapus role default untuk `!claim`.');
   }
 
   delete data.roles[roleId];
-  saveRolesData(data);
+  await saveRolesData(data);
 
   await msg.reply(`✅ Role *${roleId}* berhasil dihapus.`);
 }
@@ -161,7 +171,7 @@ async function setRole(msg, args) {
     return msg.reply('❌ Format salah!\nGunakan: `!setrole @user <role_id>`\nContoh: `!setrole @budy premium`');
   }
 
-  const data = loadRolesData();
+  const data = await loadRolesData();
   if (!data.roles[roleId]) {
     return msg.reply('❌ Role tidak ditemukan! Cek list role dengan `!roleinfo`.');
   }
@@ -170,7 +180,7 @@ async function setRole(msg, args) {
   const targetId = target.id._serialized;
 
   data.users[targetId] = roleId;
-  saveRolesData(data);
+  await saveRolesData(data);
 
   await msg.reply(`✅ Berhasil memberikan role *${data.roles[roleId].name}* kepada @${target.id.user}.`, undefined, { mentions: [targetId] });
 }
@@ -188,11 +198,11 @@ async function removeRole(msg, args) {
   const target = mentioned[0];
   const targetId = target.id._serialized;
 
-  const data = loadRolesData();
+  const data = await loadRolesData();
   if (!data.users[targetId]) return msg.reply('❌ User tersebut tidak memiliki role.');
 
   delete data.users[targetId];
-  saveRolesData(data);
+  await saveRolesData(data);
 
   await msg.reply(`✅ Berhasil mencabut role dari @${target.id.user}. Dia harus \`!claim\` ulang untuk menggunakan bot.`, undefined, { mentions: [targetId] });
 }
@@ -201,7 +211,7 @@ async function removeRole(msg, args) {
  * !roleinfo
  */
 async function roleInfo(msg) {
-  const data = loadRolesData();
+  const data = await loadRolesData();
   const roleIds = Object.keys(data.roles);
 
   if (!roleIds.length) {
@@ -224,12 +234,12 @@ async function roleInfo(msg) {
 async function myRole(msg) {
   const sender = await msg.getContact();
   const senderId = sender.id._serialized;
-  
+
   if (config.owners.includes(senderId)) {
     return msg.reply('👑 Kamu adalah *Owner Bot*!');
   }
 
-  const role = getUserRole(senderId);
+  const role = await getUserRole(senderId);
   if (!role) {
     return msg.reply('Kamu belum klaim role! Silakan ketik `!claim` untuk menggunakan bot.');
   }

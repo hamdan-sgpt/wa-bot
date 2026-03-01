@@ -59,7 +59,7 @@ async function handleMessage(client, msg) {
   const exemptCommands = ['claim', 'claimrole', 'help', 'menu', 'bantuan', 'start', 'intro'];
   
   if (!isOwner && !exemptCommands.includes(cmd)) {
-    if (!hasRole(senderId)) {
+    if (!await hasRole(senderId)) {
       return msg.reply(
         `⛔ *Akses Ditolak!*\n\n` +
         `Kamu belum terdaftar di sistem bot ini.\n` +
