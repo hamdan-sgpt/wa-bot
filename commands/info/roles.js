@@ -2,11 +2,14 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../../config');
 
-const ROLES_FILE = path.join(__dirname, '../../data/roles.json');
+// Use config.dataPath instead of hardcoded relative path
+const DATA_DIR = path.resolve(config.dataPath);
+const ROLES_FILE = path.join(DATA_DIR, 'roles.json');
 
 // Initialize empty roles file if it doesn't exist.
 // roles format: { "role_id": { name, dailyLimit, isDefaultClaim: boolean } }
 // users format: { "user_number": "role_id" }
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(ROLES_FILE)) {
   const initialData = {
     roles: {

@@ -9,6 +9,10 @@ module.exports = {
   // Bisa lebih dari satu
   owners: ['6281456099028@c.us'],
 
+  // ==================== PENYIMPANAN DATA ====================
+  // Gunakan lokasi dari Environment Variable (Railway dll) atau default ke folder lokal 'data'
+  dataPath: process.env.DATA_DIR || './data',
+
   // ==================== GEMINI AI ====================
   geminiApiKey: 'AIzaSyDxuJ8ckx3wvePlPXLSKDfRTS-1N7mSD1A',
   aiEnabled: true,

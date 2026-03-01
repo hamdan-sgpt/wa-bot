@@ -1,10 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = path.join(__dirname, '../../data');
+const config = require('../../config');
+
+const DATA_DIR = path.resolve(config.dataPath);
 const BABU_FILE = path.join(DATA_DIR, 'babu_list.json');
 
-// ── Initial seed data (125 babu) ──
+// ── Initial seed data (132 babu) ──
 const INITIAL_BABU = [
   { name: "NEVERMIN", note: "" },
   { name: "𝙁𝙇𝙊𝙓𝙓𝙄", note: "" },
@@ -131,6 +133,13 @@ const INITIAL_BABU = [
   { name: "TOXICITY", note: "" },
   { name: "401", note: "" },
   { name: "ZERELETHAL", note: "" },
+  { name: "77 Harvest", note: "" },
+  { name: "ASTRALCEES", note: "" },
+  { name: "9A9 AREA", note: "" },
+  { name: "SLINSE ALLBASE", note: "" },
+  { name: "SALVATRIX17", note: "" },
+  { name: "savael", note: "" },
+  { name: "VLAIMUNOX ANTI HAMA", note: "IZIN CB" }
 ];
 
 // ── In-memory cache (primary source of truth) ──
