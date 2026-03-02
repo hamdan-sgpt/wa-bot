@@ -5,10 +5,11 @@ const { handleAntiLink } = require('./group/antilink');
 const { handleAntiSpam } = require('./group/antispam');
 const { addBabu, listBabu, delBabu, addBabuNote } = require('./group/babu');
 const { aiChat, aiCharge, aiCredits, aiReset } = require('./fun/ai');
-const { dice, flip, randomQuote, calculator, ping } = require('./fun/games');
+const { dice, flip, randomQuote, calculator, ping, rps, tebakAngka, truth, dare, tod, eightBall, rate, ship, siapakah, slot, trivia, meme, roast, puisi, zodiak } = require('./fun/games');
 const { toSticker, toImage } = require('./fun/sticker');
 const { tiktokVideo, tiktokAudio } = require('./fun/tiktok');
 const { bratSticker } = require('./fun/brat');
+const { generateQR, remind, randomPick, poll, textEffect, countdown, cuaca, kbbi, shortUrl, nulis } = require('./fun/tools');
 const { showHelp } = require('./info/help');
 const { showIntro } = require('./info/intro');
 const { runtime, botInfo } = require('./info/runtime');
@@ -178,6 +179,73 @@ async function handleMessage(client, msg) {
       await ping(client, msg);
       break;
 
+    // ── NEW FUN GAMES ──
+    case 'rps':
+    case 'suit':
+      await rps(msg, args);
+      break;
+
+    case 'tebak':
+      await tebakAngka(msg, args);
+      break;
+
+    case 'truth':
+      await truth(msg);
+      break;
+
+    case 'dare':
+      await dare(msg);
+      break;
+
+    case 'tod':
+      await tod(msg);
+      break;
+
+    case '8ball':
+      await eightBall(msg, args);
+      break;
+
+    case 'rate':
+      await rate(msg, args);
+      break;
+
+    case 'ship':
+    case 'match':
+      await ship(msg);
+      break;
+
+    case 'siapakah':
+      await siapakah(msg, args);
+      break;
+
+    case 'slot':
+      await slot(msg);
+      break;
+
+    case 'trivia':
+    case 'quiz':
+      await trivia(msg);
+      break;
+
+    case 'meme':
+    case 'jokes':
+      await meme(msg);
+      break;
+
+    case 'roast':
+      await roast(msg);
+      break;
+
+    case 'puisi':
+    case 'pantun':
+      await puisi(msg);
+      break;
+
+    case 'zodiak':
+    case 'zodiac':
+      await zodiak(msg, args);
+      break;
+
     // ── TIKTOK DOWNLOADER ──
     case 'tt':
     case 'tiktok':
@@ -187,6 +255,55 @@ async function handleMessage(client, msg) {
     case 'ttaudio':
     case 'tta':
       await tiktokAudio(msg, args);
+      break;
+
+    // ── UTILITY TOOLS ──
+    case 'qr':
+    case 'qrcode':
+      await generateQR(msg, args);
+      break;
+
+    case 'remind':
+    case 'ingatkan':
+      await remind(client, msg, args);
+      break;
+
+    case 'acak':
+    case 'random':
+      await randomPick(msg, args);
+      break;
+
+    case 'poll':
+    case 'vote':
+      await poll(msg, args);
+      break;
+
+    case 'teks':
+    case 'text':
+      await textEffect(msg, args);
+      break;
+
+    case 'countdown':
+    case 'hitung-mundur':
+      await countdown(msg, args);
+      break;
+
+    case 'cuaca':
+    case 'weather':
+      await cuaca(msg, args);
+      break;
+
+    case 'kbbi':
+      await kbbi(msg, args);
+      break;
+
+    case 'short':
+    case 'shorturl':
+      await shortUrl(msg, args);
+      break;
+
+    case 'nulis':
+      await nulis(msg, args);
       break;
 
     // ── INFO COMMANDS ──
