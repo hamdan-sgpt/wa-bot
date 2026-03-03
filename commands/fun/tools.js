@@ -619,75 +619,6 @@ async function nulis(msg, args) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  11. SW GRUP — Post story di tab Status atas nama grup
-//  Kirim media ke status@broadcast + group JID mention
-//  Hasilnya: muncul di tab Status sebagai "story grup"
-// ═══════════════════════════════════════════════════════════════
-async function postStatus(client, msg, args) {
-  const chat = await msg.getChat();
-
-  if (!chat.isGroup) {
-    return msg.reply('❌ Perintah ini hanya bisa digunakan di dalam grup!');
-  }
-
-  const text = args.slice(1).join(' ');
-  const quotedMsg = await msg.getQuotedMessage?.();
-
-  // Cek media (reply ke gambar/video atau kirim langsung)
-  const mediaMsg = quotedMsg?.hasMedia ? quotedMsg : (msg.hasMedia ? msg : null);
-
-  if (!mediaMsg && !text) {
-    return msg.reply(
-      `📱 *SW GRUP — Story Grup*\n\n` +
-      `Post story/status yang muncul di tab Status atas nama grup!\n\n` +
-      `*Cara pakai:*\n` +
-      `• Kirim gambar + caption \`!sw\`\n` +
-      `• Reply gambar/video + \`!sw\`\n` +
-      `• Reply gambar + \`!sw [caption]\`\n\n` +
-      `📌 Hasilnya muncul di tab *Status/Updates* WhatsApp sebagai story grup`
-    );
-  }
-
-  try {
-    const groupId = chat.id._serialized;
-    const groupName = chat.name;
-
-    if (mediaMsg) {
-      const media = await mediaMsg.downloadMedia();
-      if (!media || !media.data) {
-        return msg.reply('❌ Gagal download media.');
-      }
-
-      // Kirim ke status@broadcast dengan group mention
-      // groupMentions membuat status muncul sebagai "story grup"
-      await client.sendMessage('status@broadcast', media, {
-        caption: text || '',
-        groupMentions: [{
-          subject: groupName,
-          id: groupId,
-        }],
-      });
-    } else {
-      // Status teks dengan group mention
-      await client.sendMessage('status@broadcast', text, {
-        groupMentions: [{
-          subject: groupName,
-          id: groupId,
-        }],
-      });
-    }
-
-    await msg.reply(
-      `✅ *Berhasil memposting story di grup!*\n\n` +
-      `📱 Cek tab *Status/Updates* WhatsApp untuk melihat hasilnya.`
-    );
-  } catch (err) {
-    console.error('SW Grup error:', err);
-    await msg.reply('❌ Gagal posting story: ' + err.message);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
 //  EXPORTS
 // ═══════════════════════════════════════════════════════════════
 module.exports = {
@@ -701,5 +632,4 @@ module.exports = {
   kbbi,
   shortUrl,
   nulis,
-  postStatus,
 };

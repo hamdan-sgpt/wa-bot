@@ -43,6 +43,9 @@ module.exports = {
   // ==================== REMOVE.BG ====================
   removeBgApiKey: process.env.REMOVEBG_API_KEY || 'WbuZ8h7Hegf1T3VNh9NjJcNV',
 
+  // ==================== DEEPAI (HD Enhance) ====================
+  deepAiApiKey: process.env.DEEPAI_API_KEY || '6b28d2c9-81b4-4d90-80f3-47f9964b5654',
+
   // ==================== MISC ====================
   startTime: Date.now(),
 };

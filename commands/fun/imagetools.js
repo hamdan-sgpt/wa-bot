@@ -214,60 +214,74 @@ async function removeBg(msg) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  3. HD ENHANCE (Upscale + Sharpen via Canvas)
+//  3. HD ENHANCE (DeepAI Super Resolution API — AI-based upscale)
 // ═══════════════════════════════════════════════════════════════
 
 async function hdEnhance(msg) {
   const quotedMsg = await msg.getQuotedMessage?.() || msg;
   if (!quotedMsg.hasMedia) {
     return msg.reply(
-      `✨ *HD ENHANCE*\n\nCara pakai: Kirim/reply gambar dengan caption \`!hd\``
+      `✨ *HD ENHANCE (AI)*\n\n` +
+      `Cara pakai: Kirim/reply gambar dengan caption \`!hd\`\n\n` +
+      `🤖 Menggunakan AI Super Resolution untuk hasil HD yang beneran tajam!`
     );
   }
 
-  await msg.reply('⏳ Sedang meng-HD-kan gambar...');
+  await msg.reply('⏳ Sedang meng-HD-kan gambar pake AI... (±10 detik)');
 
   try {
-    const { createCanvas, loadImage } = require('@napi-rs/canvas');
     const media = await quotedMsg.downloadMedia();
     if (!media || !media.data) return msg.reply('❌ Gagal mendownload gambar.');
 
+    const apiKey = process.env.DEEPAI_API_KEY || require('../../config').deepAiApiKey;
+    if (!apiKey) {
+      return msg.reply('❌ API key DeepAI belum diset! Hubungi owner bot.');
+    }
+
+    // Kirim ke DeepAI Super Resolution API
+    const FormData = require('form-data');
+    const form = new FormData();
     const imgBuffer = Buffer.from(media.data, 'base64');
-    const img = await loadImage(imgBuffer);
+    form.append('image', imgBuffer, { filename: 'input.jpg', contentType: media.mimetype || 'image/jpeg' });
 
-    const scale = 2;
-    const maxDim = 4000;
-    let finalW = img.width * scale;
-    let finalH = img.height * scale;
-    if (finalW > maxDim || finalH > maxDim) {
-      const r = Math.min(maxDim / finalW, maxDim / finalH);
-      finalW = Math.round(finalW * r);
-      finalH = Math.round(finalH * r);
+    const response = await axios.post(
+      'https://api.deepai.org/api/torch-srgan',
+      form,
+      {
+        headers: {
+          'Api-Key': apiKey,
+          ...form.getHeaders(),
+        },
+        timeout: 60000,
+      }
+    );
+
+    const outputUrl = response.data?.output_url;
+    if (!outputUrl) {
+      throw new Error('API tidak mengembalikan hasil.');
     }
 
-    const canvas = createCanvas(finalW, finalH);
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, 0, 0, finalW, finalH);
+    // Download hasil HD dari DeepAI
+    const hdResponse = await axios.get(outputUrl, {
+      responseType: 'arraybuffer',
+      timeout: 60000,
+    });
 
-    const imageData = ctx.getImageData(0, 0, finalW, finalH);
-    const data = imageData.data;
-    const contrast = 1.15, brightness = 5;
-    for (let i = 0; i < data.length; i += 4) {
-      data[i]     = Math.min(255, Math.max(0, ((data[i] - 128) * contrast) + 128 + brightness));
-      data[i + 1] = Math.min(255, Math.max(0, ((data[i + 1] - 128) * contrast) + 128 + brightness));
-      data[i + 2] = Math.min(255, Math.max(0, ((data[i + 2] - 128) * contrast) + 128 + brightness));
-    }
-    ctx.putImageData(imageData, 0, 0);
+    const resultBase64 = Buffer.from(hdResponse.data).toString('base64');
+    const resultMedia = new MessageMedia('image/png', resultBase64, 'hd_ai.png');
 
-    const buffer = canvas.toBuffer('image/png');
-    const resultMedia = new MessageMedia('image/png', buffer.toString('base64'), 'hd.png');
     await msg.reply(resultMedia, undefined, {
-      caption: `✨ *HD ENHANCE*\n\n📐 ${img.width}×${img.height} → ${finalW}×${finalH}\n🔍 ${scale}x + Sharpen`,
+      caption:
+        `✨ *HD ENHANCE (AI)*\n\n` +
+        `🤖 Super Resolution by DeepAI\n` +
+        `🔍 AI Upscale + Detail Recovery\n\n` +
+        `_Gambar di-enhance pake AI SRGAN untuk hasil HD maksimal_`,
     });
   } catch (err) {
-    await msg.reply('❌ Gagal enhance: ' + err.message);
+    const errMsg = err.response?.data
+      ? (typeof err.response.data === 'string' ? err.response.data : JSON.stringify(err.response.data))
+      : err.message;
+    await msg.reply('❌ Gagal enhance HD: ' + errMsg);
   }
 }
 

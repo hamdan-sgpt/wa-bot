@@ -6,13 +6,14 @@ const { handleAntiSpam } = require('./group/antispam');
 const { addBabu, listBabu, delBabu, addBabuNote } = require('./group/babu');
 const { aiChat, aiCharge, aiCredits, aiReset } = require('./fun/ai');
 const { dice, flip, randomQuote, calculator, ping, rps, tebakAngka, truth, dare, tod, eightBall, rate, ship, siapakah, slot, trivia, meme, roast, puisi, zodiak } = require('./fun/games');
-const { toSticker, toImage } = require('./fun/sticker');
+const { toSticker, toImage, stickerText } = require('./fun/sticker');
 const { tiktokVideo, tiktokAudio } = require('./fun/tiktok');
 const { bratSticker } = require('./fun/brat');
-const { generateQR, remind, randomPick, poll, textEffect, countdown, cuaca, kbbi, shortUrl, nulis, postStatus } = require('./fun/tools');
+const { generateQR, remind, randomPick, poll, textEffect, countdown, cuaca, kbbi, shortUrl, nulis } = require('./fun/tools');
 const { setAfk, checkAfkSender, checkAfkMentions, processXp, showLevel, leaderboard, confess, profileCard } = require('./fun/social');
 const { interceptViewOnce, eksporViewOnce, removeBg, hdEnhance } = require('./fun/imagetools');
 const { fakeChat } = require('./fun/fakechat');
+const { translate, lirik, wiki, screenshot, quotely, fancyFont, urban, githubProfile, ramalan, colorCard } = require('./fun/extras');
 const { showHelp } = require('./info/help');
 const { showIntro } = require('./info/intro');
 const { runtime, botInfo } = require('./info/runtime');
@@ -158,6 +159,11 @@ async function handleMessage(client, msg) {
     case 'toimg':
     case 'toimage':
       await toImage(client, msg);
+      break;
+
+    case 'st':
+    case 'stickertext':
+      await stickerText(client, msg, args);
       break;
 
     case 'brat':
@@ -330,10 +336,54 @@ async function handleMessage(client, msg) {
       await nulis(msg, args);
       break;
 
-    case 'sw':
-    case 'status':
-    case 'story':
-      await postStatus(client, msg, args);
+    // ── EXTRAS (10 Fitur Baru) ──
+    case 'tr':
+    case 'translate':
+      await translate(msg, args);
+      break;
+
+    case 'lirik':
+    case 'lyrics':
+      await lirik(msg, args);
+      break;
+
+    case 'wiki':
+    case 'wikipedia':
+      await wiki(msg, args);
+      break;
+
+    case 'ss':
+    case 'screenshot':
+      await screenshot(msg, args);
+      break;
+
+    case 'quotely':
+    case 'qimg':
+      await quotely(msg);
+      break;
+
+    case 'font':
+      await fancyFont(msg, args);
+      break;
+
+    case 'urban':
+    case 'ud':
+      await urban(msg, args);
+      break;
+
+    case 'github':
+    case 'gh':
+      await githubProfile(msg, args);
+      break;
+
+    case 'ramalan':
+    case 'horoscope':
+      await ramalan(msg, args);
+      break;
+
+    case 'color':
+    case 'warna':
+      await colorCard(msg, args);
       break;
 
     // ── INFO COMMANDS ──
