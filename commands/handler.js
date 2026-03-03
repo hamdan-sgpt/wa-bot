@@ -12,6 +12,7 @@ const { bratSticker } = require('./fun/brat');
 const { generateQR, remind, randomPick, poll, textEffect, countdown, cuaca, kbbi, shortUrl, nulis } = require('./fun/tools');
 const { setAfk, checkAfkSender, checkAfkMentions, processXp, showLevel, leaderboard, confess, profileCard } = require('./fun/social');
 const { removeBg, hdEnhance, eksporViewOnce } = require('./fun/imagetools');
+const { fakeChat } = require('./fun/fakechat');
 const { showHelp } = require('./info/help');
 const { showIntro } = require('./info/intro');
 const { runtime, botInfo } = require('./info/runtime');
@@ -408,6 +409,13 @@ async function handleMessage(client, msg) {
     case 'ekspor':
     case 'viewonce':
       await eksporViewOnce(msg);
+      break;
+
+    // ── FAKE CHAT GENERATOR ──
+    case 'fakechat':
+    case 'fc':
+    case 'iphonechat':
+      await fakeChat(msg, args);
       break;
 
     default:

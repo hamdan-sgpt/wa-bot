@@ -1,0 +1,49 @@
+const axios = require('axios');
+
+const API_KEY = '$2a$10$cozvrGwx8hMd5p9LLwkcKuhqNiUC.5PNfvaolPqO05qN2rgjqLIPW';
+const BASE_URL = 'https://api.jsonbin.io/v3/b';
+
+const headers = {
+  'X-Master-Key': API_KEY,
+  'Content-Type': 'application/json',
+  'X-Bin-Private': 'true',
+};
+
+async function createBin(name, data) {
+  const res = await axios.post(BASE_URL, data, {
+    headers: { ...headers, 'X-Bin-Name': name }
+  });
+  return res.data.metadata.id;
+}
+
+async function main() {
+  console.log('🚀 Membuat bin di JSONBin...\n');
+
+  const initialBabu = [{"name":"NEVERMIN","note":""},{"name":"LAVEXRAN","note":""},{"name":"NEXSTALEVERZ","note":""},{"name":"BRUTAL CS","note":""},{"name":"FORIUS","note":""},{"name":"BLACK ROSE","note":""},{"name":"AUSTRALIA","note":""},{"name":"VOXCAN","note":""},{"name":"MBOJO STARS","note":""},{"name":"REMINDER","note":""},{"name":"VENXCYURS","note":""},{"name":"INVESTARS44","note":""},{"name":"NAMIKAZE25","note":""},{"name":"NOXFOURTY","note":""},{"name":"FIGHTER","note":""},{"name":"SILENTLITE","note":""},{"name":"DREAMER","note":""},{"name":"RBBS NEW ERA","note":""},{"name":"MARGA 244","note":""},{"name":"NEXSYLEN","note":""},{"name":"NOTFACE","note":""},{"name":"VLOXOEE","note":""},{"name":"4GEORCOUS","note":""},{"name":"NOCURE","note":""},{"name":"VARNIY 2K25","note":""},{"name":"clipsey starr","note":""},{"name":"VOLNAITE","note":""},{"name":"NARVY 2K25","note":""},{"name":"MARGA 24","note":"KACUNG GAADA PERLAWANAN"},{"name":"VLEXTNDER","note":""},{"name":"VAMPIRE","note":""},{"name":"VILENZSYTAR","note":""},{"name":"SG NEW","note":""},{"name":"GENESIS","note":""},{"name":"PETARUNK","note":""},{"name":"NEVERLUS","note":""},{"name":"ARCHARY","note":""},{"name":"XC","note":""},{"name":"EXANNATOS","note":""},{"name":"911 PRIDE","note":""},{"name":"ACUMALAKA","note":""},{"name":"INVICTUS","note":""},{"name":"MARGA 17 KW","note":""},{"name":"VIPERCEES INTI","note":""},{"name":"NEVEROR JR","note":""},{"name":"VIOLANCE 7","note":""},{"name":"ALL THREE","note":""},{"name":"HAOTIAN","note":""},{"name":"NJ","note":""},{"name":"Nelvence","note":""},{"name":"pamdestroyer","note":""},{"name":"VIOLANCE","note":""},{"name":"909 MARGA","note":""},{"name":"MAFIOSO","note":""},{"name":"EIGHTY CS CLUB","note":""},{"name":"Phantom ReaperZ","note":""},{"name":"tw1stic","note":""},{"name":"XSTARS","note":""},{"name":"MARGA 15","note":""},{"name":"sevenx","note":""},{"name":"ULTRASORTS","note":""},{"name":"mystic","note":""},{"name":"NEXSUS","note":""},{"name":"18NEVERDIE","note":""},{"name":"XEAD CESS","note":""},{"name":"LOXIE","note":""},{"name":"POKEMON","note":""},{"name":"EXTERMINATO","note":""},{"name":"volrix","note":""},{"name":"GOODREALM","note":""},{"name":"KaZuTo","note":""},{"name":"TRDH-CEES","note":""},{"name":"neverland prime","note":""},{"name":"STARNOVA","note":""},{"name":"STECU","note":""},{"name":"NCX","note":""},{"name":"STECU99","note":""},{"name":"PRIMEALITE","note":""},{"name":"ALLBASE KING SECRET","note":""},{"name":"VENXCYURS","note":""},{"name":"ANTANIX AREA","note":""},{"name":"QUIXOTIC","note":""},{"name":"SOCRATES","note":""},{"name":"NATHERLANDSS","note":""},{"name":"VEX77 NEVERIDE","note":""},{"name":"JOMOKERS","note":""},{"name":"DOMINION","note":""},{"name":"TGM","note":""},{"name":"PHANTOM DECAY","note":""},{"name":"MARGA 12","note":""},{"name":"18PRIDE","note":""},{"name":"83","note":""},{"name":"NEVERVOS","note":""},{"name":"REVERRION","note":""},{"name":"UNBETABLE","note":""},{"name":"TANG SECT","note":""},{"name":"MINIONS","note":""},{"name":"MARGA 25","note":""},{"name":"SEVENSIX","note":""},{"name":"NOCTISMORS","note":""},{"name":"DOWSKIE","note":""},{"name":"VOLTAZE","note":""},{"name":"REAPERS","note":""},{"name":"AVENGERS","note":"NGILANG"},{"name":"DUTTPRIDE","note":""},{"name":"ASCRUZ","note":""},{"name":"SATAXUS","note":"ownernya hbis minum arak 10 botol"},{"name":"KSK TEAM","note":""},{"name":"BESAGA","note":""},{"name":"VOLTASE","note":""},{"name":"VOLTRA","note":""},{"name":"MIDEWAY","note":""},{"name":"LENOX13","note":""},{"name":"ZIZUH","note":""},{"name":"GLAZER","note":""},{"name":"NOURXTIVEN","note":""},{"name":"KALCER R ARE","note":"kaga terima kalo dis kocak anj"},{"name":"77HARVEST","note":""},{"name":"N3CKDEEP","note":""},{"name":"LIONS","note":""},{"name":"NEVERDIE","note":""},{"name":"TOXICITY","note":""},{"name":"401","note":""},{"name":"ZERELETHAL","note":""},{"name":"77 Harvest","note":""},{"name":"ASTRALCEES","note":""},{"name":"9A9 AREA","note":""},{"name":"SLINSE ALLBASE","note":""},{"name":"SALVATRIX17","note":""},{"name":"savael","note":""},{"name":"VLAIMUNOX ANTI HAMA","note":"IZIN CB"}];
+  const babuBinId = await createBin('wa-bot-babu', initialBabu);
+  console.log(`✅ Bin Babu dibuat! ID: ${babuBinId}`);
+
+  const rolesInitial = {
+    roles: {
+      member: {
+        name: 'Member Baru',
+        dailyLimit: 10,
+        isDefaultClaim: true
+      }
+    },
+    users: {}
+  };
+  const rolesBinId = await createBin('wa-bot-roles', rolesInitial);
+  console.log(`✅ Bin Roles dibuat! ID: ${rolesBinId}`);
+
+  console.log('\n========================================');
+  console.log('📋 Copy 3 variable ini ke Railway:\n');
+  console.log(`JSONBIN_API_KEY=${API_KEY}`);
+  console.log(`JSONBIN_BABU_BIN_ID=${babuBinId}`);
+  console.log(`JSONBIN_ROLES_BIN_ID=${rolesBinId}`);
+  console.log('========================================\n');
+}
+
+main().catch(err => {
+  console.error('❌ Error:', err.response?.data || err.message);
+});

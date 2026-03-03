@@ -113,6 +113,7 @@ const MENUS = {
       [`${p}removebg`, 'Hapus background gambar 🖼️'],
       [`${p}hd`, 'HD enhance / upscale gambar ✨'],
       [`${p}ekspor`, 'Ekspor foto/video view-once 👁️'],
+      [`${p}fakechat [teks]`, 'Fake iPhone chat screenshot 📱'],
     ],
   },
   ai: {
