@@ -3,78 +3,91 @@ const axios = require('axios');
 
 // ═══════════════════════════════════════════════════════════════
 //  IN-MEMORY CACHE untuk View-Once messages
-//  groupId => [ { id, media, sender, type, timestamp } ]
-//  Auto-expire setelah 10 menit
+//  chatId => [ { media, sender, type, timestamp } ]
+//  Auto-expire: 10 menit
 // ═══════════════════════════════════════════════════════════════
-
-// chatId => array of cached view-once items
 const viewOnceCache = new Map();
-const CACHE_EXPIRE = 10 * 60 * 1000; // 10 menit
+const CACHE_EXPIRE = 10 * 60 * 1000;
 
 /**
  * Hook: Dipanggil dari handler.js untuk SETIAP pesan masuk
  * Detect & cache view-once messages sebelum expired
+ *
+ * whatsapp-web.js v1.26 TIDAK punya msg.isViewOnce
+ * Detection harus via msg._data.isViewOnce
  */
 async function interceptViewOnce(msg) {
   try {
-    // Cek apakah pesan ini view-once
-    const isVO = msg.isViewOnce ||
-                 msg._data?.isViewOnce ||
-                 (msg._data?.message?.viewOnceMessage) ||
-                 (msg._data?.message?.viewOnceMessageV2) ||
-                 (msg._data?.message?.viewOnceMessageV2Extension);
+    // ── Detection: check raw data ──
+    const raw = msg._data || {};
+    const isVO = raw.isViewOnce === true ||
+                 raw.isViewOnce === 1 ||
+                 (raw.message && (
+                   raw.message.viewOnceMessage != null ||
+                   raw.message.viewOnceMessageV2 != null ||
+                   raw.message.viewOnceMessageV2Extension != null
+                 ));
 
     if (!isVO) return false;
-    if (!msg.hasMedia) return false;
 
-    // Download media SEKARANG sebelum expired
-    const media = await msg.downloadMedia();
-    if (!media || !media.data) return false;
+    // View-once terdeteksi!
+    console.log(`👁️ [VIEW-ONCE] Terdeteksi dari ${msg.from} (type: ${msg.type}, hasMedia: ${msg.hasMedia})`);
+
+    // Download media - cek hasMedia dulu, kalau false coba paksa download
+    let media = null;
+    if (msg.hasMedia) {
+      media = await msg.downloadMedia();
+    }
+
+    // Fallback: coba download meskipun hasMedia false (kadang view-once hasMedia = false)
+    if (!media || !media.data) {
+      try {
+        media = await msg.downloadMedia();
+      } catch (e) {
+        console.error('👁️ [VIEW-ONCE] Download fallback gagal:', e.message);
+      }
+    }
+
+    if (!media || !media.data) {
+      console.log('👁️ [VIEW-ONCE] Media gagal di-download');
+      return false;
+    }
 
     const contact = await msg.getContact();
     const chatId = msg.from;
-    const senderName = contact.pushname || contact.name || contact.id.user;
-    const senderId = contact.id._serialized;
 
-    // Simpan ke cache
     if (!viewOnceCache.has(chatId)) {
       viewOnceCache.set(chatId, []);
     }
 
     const cache = viewOnceCache.get(chatId);
-    const entry = {
-      id: msg.id._serialized,
+    cache.push({
       media,
-      senderName,
-      senderId,
+      senderName: contact.pushname || contact.name || contact.id.user,
+      senderId: contact.id._serialized,
       senderUser: contact.id.user,
       type: media.mimetype,
       timestamp: Date.now(),
-    };
+    });
 
-    cache.push(entry);
-
-    // Limit cache per chat (max 5 item)
+    // Max 5 per chat
     while (cache.length > 5) cache.shift();
 
-    // Auto-cleanup expired entries
+    // Auto-cleanup
     setTimeout(() => {
       const arr = viewOnceCache.get(chatId);
       if (arr) {
         const now = Date.now();
         const filtered = arr.filter(e => now - e.timestamp < CACHE_EXPIRE);
-        if (filtered.length === 0) {
-          viewOnceCache.delete(chatId);
-        } else {
-          viewOnceCache.set(chatId, filtered);
-        }
+        if (filtered.length === 0) viewOnceCache.delete(chatId);
+        else viewOnceCache.set(chatId, filtered);
       }
     }, CACHE_EXPIRE);
 
-    console.log(`👁️ View-once dari ${senderName} di-cache (${media.mimetype})`);
+    console.log(`👁️ [VIEW-ONCE] ✅ Cached! (${media.mimetype}, ${cache.length} items)`);
     return true;
   } catch (err) {
-    console.error('ViewOnce intercept error:', err.message);
+    console.error('👁️ [VIEW-ONCE] Intercept error:', err.message);
     return false;
   }
 }
@@ -83,10 +96,6 @@ async function interceptViewOnce(msg) {
 //  1. EKSPOR VIEW-ONCE (!ekspor)
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Command: !ekspor
- * Ekspor view-once terakhir di chat ini
- */
 async function eksporViewOnce(msg) {
   const chatId = msg.from;
   const cache = viewOnceCache.get(chatId);
@@ -94,18 +103,18 @@ async function eksporViewOnce(msg) {
   if (!cache || cache.length === 0) {
     return msg.reply(
       `👁️ *EKSPOR VIEW-ONCE*\n\n` +
-      `Tidak ada pesan view-once yang tersimpan di chat ini.\n\n` +
-      `⚠️ *Cara kerja:*\n` +
-      `Bot otomatis mendeteksi & menyimpan foto/video view-once saat dikirim.\n` +
-      `Lalu ketik \`!ekspor\` untuk mengekspor-nya.\n\n` +
+      `Tidak ada pesan view-once yang tersimpan.\n\n` +
+      `*Cara kerja:*\n` +
+      `Bot otomatis mendeteksi & menyimpan foto/video view-once saat dikirim ke chat ini.\n` +
+      `Lalu ketik \`!ekspor\` untuk mengekspor.\n\n` +
       `📌 *Catatan:*\n` +
-      `• View-once hanya disimpan *10 menit*\n` +
-      `• Maksimal 5 view-once per chat\n` +
+      `• Disimpan maks *10 menit*\n` +
+      `• Maks 5 view-once per chat\n` +
       `• Bot harus sudah aktif saat view-once dikirim`
     );
   }
 
-  // Clean expired entries
+  // Filter expired
   const now = Date.now();
   const valid = cache.filter(e => now - e.timestamp < CACHE_EXPIRE);
   if (valid.length === 0) {
@@ -113,7 +122,6 @@ async function eksporViewOnce(msg) {
     return msg.reply('❌ View-once sudah expired (lebih dari 10 menit).');
   }
 
-  // Ambil yang terbaru
   const latest = valid[valid.length - 1];
 
   try {
@@ -135,14 +143,11 @@ async function eksporViewOnce(msg) {
       mentions: [latest.senderId],
     });
 
-    // Hapus dari cache setelah diekspor
+    // Remove from cache
     const idx = valid.indexOf(latest);
     valid.splice(idx, 1);
-    if (valid.length === 0) {
-      viewOnceCache.delete(chatId);
-    } else {
-      viewOnceCache.set(chatId, valid);
-    }
+    if (valid.length === 0) viewOnceCache.delete(chatId);
+    else viewOnceCache.set(chatId, valid);
   } catch (err) {
     await msg.reply('❌ Gagal mengekspor: ' + err.message);
   }
@@ -167,11 +172,8 @@ async function removeBg(msg) {
     return msg.reply('❌ API key remove.bg belum diset! Hubungi owner bot.');
   }
 
-  // Cek apakah reply ke gambar atau ada gambar
   const quotedMsg = await msg.getQuotedMessage?.() || msg;
-  const hasMedia = quotedMsg.hasMedia;
-
-  if (!hasMedia) {
+  if (!quotedMsg.hasMedia) {
     return msg.reply(
       `🖼️ *REMOVE BACKGROUND*\n\n` +
       `Cara pakai: Kirim/reply gambar dengan caption \`!removebg\`\n\n` +
@@ -181,44 +183,30 @@ async function removeBg(msg) {
     );
   }
 
-  await msg.reply('⏳ Sedang menghapus background... Tunggu sebentar ya!');
+  await msg.reply('⏳ Sedang menghapus background...');
 
   try {
     const media = await quotedMsg.downloadMedia();
-    if (!media || !media.data) {
-      return msg.reply('❌ Gagal mendownload gambar.');
-    }
+    if (!media || !media.data) return msg.reply('❌ Gagal mendownload gambar.');
 
     const response = await axios({
       method: 'post',
       url: 'https://api.remove.bg/v1.0/removebg',
-      headers: {
-        'X-Api-Key': apiKey,
-        'Content-Type': 'application/json',
-      },
-      data: {
-        image_file_b64: media.data,
-        size: 'auto',
-        format: 'png',
-      },
+      headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+      data: { image_file_b64: media.data, size: 'auto', format: 'png' },
       responseType: 'arraybuffer',
       timeout: 30000,
     });
 
     const resultBase64 = Buffer.from(response.data).toString('base64');
     const resultMedia = new MessageMedia('image/png', resultBase64, 'nobg.png');
-
     await msg.reply(resultMedia, undefined, {
       caption: `✅ *Background berhasil dihapus!*\n\n_Powered by remove.bg_`,
     });
   } catch (err) {
-    if (err.response?.status === 402) {
-      await msg.reply('❌ Kuota remove.bg habis bulan ini (limit 50 gambar/bulan).');
-    } else if (err.response?.status === 400) {
-      await msg.reply('❌ Gambar tidak valid atau tidak bisa diproses.');
-    } else {
-      await msg.reply('❌ Gagal menghapus background: ' + (err.message || 'Unknown error'));
-    }
+    if (err.response?.status === 402) await msg.reply('❌ Kuota remove.bg habis (50/bulan).');
+    else if (err.response?.status === 400) await msg.reply('❌ Gambar tidak valid.');
+    else await msg.reply('❌ Gagal: ' + (err.message || 'Unknown error'));
   }
 }
 
@@ -228,87 +216,57 @@ async function removeBg(msg) {
 
 async function hdEnhance(msg) {
   const quotedMsg = await msg.getQuotedMessage?.() || msg;
-
   if (!quotedMsg.hasMedia) {
     return msg.reply(
-      `✨ *HD ENHANCE*\n\n` +
-      `Cara pakai: Kirim/reply gambar dengan caption \`!hd\`\n\n` +
-      `Contoh:\n` +
-      `1️⃣ Kirim gambar + caption \`!hd\`\n` +
-      `2️⃣ Atau reply gambar → ketik \`!hd\``
+      `✨ *HD ENHANCE*\n\nCara pakai: Kirim/reply gambar dengan caption \`!hd\``
     );
   }
 
-  await msg.reply('⏳ Sedang meng-HD-kan gambar... Tunggu sebentar!');
+  await msg.reply('⏳ Sedang meng-HD-kan gambar...');
 
   try {
     const { createCanvas, loadImage } = require('@napi-rs/canvas');
     const media = await quotedMsg.downloadMedia();
-    if (!media || !media.data) {
-      return msg.reply('❌ Gagal mendownload gambar.');
-    }
+    if (!media || !media.data) return msg.reply('❌ Gagal mendownload gambar.');
 
     const imgBuffer = Buffer.from(media.data, 'base64');
     const img = await loadImage(imgBuffer);
 
-    // Upscale 2x
     const scale = 2;
-    const newWidth = img.width * scale;
-    const newHeight = img.height * scale;
-
-    // Cap max dimensions to prevent OOM (max 4000px)
     const maxDim = 4000;
-    let finalWidth = newWidth;
-    let finalHeight = newHeight;
-    if (finalWidth > maxDim || finalHeight > maxDim) {
-      const ratio = Math.min(maxDim / finalWidth, maxDim / finalHeight);
-      finalWidth = Math.round(finalWidth * ratio);
-      finalHeight = Math.round(finalHeight * ratio);
+    let finalW = img.width * scale;
+    let finalH = img.height * scale;
+    if (finalW > maxDim || finalH > maxDim) {
+      const r = Math.min(maxDim / finalW, maxDim / finalH);
+      finalW = Math.round(finalW * r);
+      finalH = Math.round(finalH * r);
     }
 
-    const canvas = createCanvas(finalWidth, finalHeight);
+    const canvas = createCanvas(finalW, finalH);
     const ctx = canvas.getContext('2d');
-
-    // Enable smooth scaling
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, finalW, finalH);
 
-    // Draw upscaled
-    ctx.drawImage(img, 0, 0, finalWidth, finalHeight);
-
-    // Apply sharpening
-    const imageData = ctx.getImageData(0, 0, finalWidth, finalHeight);
+    const imageData = ctx.getImageData(0, 0, finalW, finalH);
     const data = imageData.data;
-
-    // Simple contrast + brightness enhancement
-    const contrast = 1.15;
-    const brightness = 5;
+    const contrast = 1.15, brightness = 5;
     for (let i = 0; i < data.length; i += 4) {
-      data[i] = Math.min(255, Math.max(0, ((data[i] - 128) * contrast) + 128 + brightness));
+      data[i]     = Math.min(255, Math.max(0, ((data[i] - 128) * contrast) + 128 + brightness));
       data[i + 1] = Math.min(255, Math.max(0, ((data[i + 1] - 128) * contrast) + 128 + brightness));
       data[i + 2] = Math.min(255, Math.max(0, ((data[i + 2] - 128) * contrast) + 128 + brightness));
     }
     ctx.putImageData(imageData, 0, 0);
 
     const buffer = canvas.toBuffer('image/png');
-    const base64 = buffer.toString('base64');
-    const resultMedia = new MessageMedia('image/png', base64, 'hd.png');
-
+    const resultMedia = new MessageMedia('image/png', buffer.toString('base64'), 'hd.png');
     await msg.reply(resultMedia, undefined, {
-      caption:
-        `✨ *HD ENHANCE*\n\n` +
-        `📐 Original: ${img.width} × ${img.height}\n` +
-        `📐 Enhanced: ${finalWidth} × ${finalHeight}\n` +
-        `🔍 Scale: ${scale}x + Sharpen + Contrast`,
+      caption: `✨ *HD ENHANCE*\n\n📐 ${img.width}×${img.height} → ${finalW}×${finalH}\n🔍 ${scale}x + Sharpen`,
     });
   } catch (err) {
-    await msg.reply('❌ Gagal enhance gambar: ' + err.message);
+    await msg.reply('❌ Gagal enhance: ' + err.message);
   }
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  EXPORTS
-// ═══════════════════════════════════════════════════════════════
 
 module.exports = {
   interceptViewOnce,
