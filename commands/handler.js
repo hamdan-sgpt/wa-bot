@@ -9,9 +9,9 @@ const { dice, flip, randomQuote, calculator, ping, rps, tebakAngka, truth, dare,
 const { toSticker, toImage } = require('./fun/sticker');
 const { tiktokVideo, tiktokAudio } = require('./fun/tiktok');
 const { bratSticker } = require('./fun/brat');
-const { generateQR, remind, randomPick, poll, textEffect, countdown, cuaca, kbbi, shortUrl, nulis } = require('./fun/tools');
+const { generateQR, remind, randomPick, poll, textEffect, countdown, cuaca, kbbi, shortUrl, nulis, postStatus } = require('./fun/tools');
 const { setAfk, checkAfkSender, checkAfkMentions, processXp, showLevel, leaderboard, confess, profileCard } = require('./fun/social');
-const { removeBg, hdEnhance, eksporViewOnce } = require('./fun/imagetools');
+const { interceptViewOnce, eksporViewOnce, removeBg, hdEnhance } = require('./fun/imagetools');
 const { fakeChat } = require('./fun/fakechat');
 const { showHelp } = require('./info/help');
 const { showIntro } = require('./info/intro');
@@ -35,6 +35,13 @@ async function handleMessage(client, msg) {
   const contact = await msg.getContact();
   const isGroup = chat.isGroup;
   const body = msg.body || '';
+
+  // ── VIEW-ONCE INTERCEPT (runs FIRST — cache before anything else) ──
+  try {
+    await interceptViewOnce(msg);
+  } catch (err) {
+    // Silent fail
+  }
 
   // ── AUTO-PROTECTION (runs before command check) ──
   if (isGroup) {
@@ -323,6 +330,12 @@ async function handleMessage(client, msg) {
       await nulis(msg, args);
       break;
 
+    case 'sw':
+    case 'status':
+    case 'story':
+      await postStatus(client, msg, args);
+      break;
+
     // ── INFO COMMANDS ──
     case 'help':
     case 'menu':
@@ -411,7 +424,8 @@ async function handleMessage(client, msg) {
       await eksporViewOnce(msg);
       break;
 
-    // ── FAKE CHAT GENERATOR ──
+    // ── IQC — iPhone Quoted Chat Generator ──
+    case 'iqc':
     case 'fakechat':
     case 'fc':
     case 'iphonechat':

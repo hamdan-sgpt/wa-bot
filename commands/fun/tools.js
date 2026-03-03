@@ -619,6 +619,67 @@ async function nulis(msg, args) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  11. STATUS WHATSAPP / SW (post Story dari bot)
+// ═══════════════════════════════════════════════════════════════
+async function postStatus(client, msg, args) {
+  // Owner-only check
+  const contact = await msg.getContact();
+  const senderId = contact.id._serialized;
+  const config = require('../../config');
+  const isOwner = config.owners.includes(senderId);
+
+  if (!isOwner) {
+    return msg.reply('⛔ Fitur ini hanya untuk *Owner* bot!');
+  }
+
+  const text = args.slice(1).join(' ');
+  const quotedMsg = await msg.getQuotedMessage?.();
+
+  // Cek apakah ada media (reply ke gambar/video atau kirim langsung)
+  const mediaMsg = quotedMsg?.hasMedia ? quotedMsg : (msg.hasMedia ? msg : null);
+
+  if (!text && !mediaMsg) {
+    return msg.reply(
+      `📱 *SW — Status WhatsApp*\n\n` +
+      `Post story/status dari akun bot!\n\n` +
+      `*Cara pakai:*\n` +
+      `• \`!sw [teks]\` — Post status teks\n` +
+      `• Reply gambar/video + \`!sw\` — Post status media\n` +
+      `• Reply gambar/video + \`!sw [caption]\` — Post media + caption\n` +
+      `• Kirim gambar + caption \`!sw [teks]\` — Post media + caption\n\n` +
+      `⚠️ *Owner only*`
+    );
+  }
+
+  try {
+    await msg.reply('⏳ Posting status...');
+
+    if (mediaMsg) {
+      // Post status dengan media
+      const media = await mediaMsg.downloadMedia();
+      if (!media || !media.data) {
+        return msg.reply('❌ Gagal download media.');
+      }
+
+      await client.sendMessage('status@broadcast', media, {
+        caption: text || '',
+      });
+    } else {
+      // Post status teks saja
+      await client.sendMessage('status@broadcast', text);
+    }
+
+    await msg.reply(
+      `✅ *Status berhasil diposting!*\n\n` +
+      `📱 Cek status WhatsApp bot untuk melihat hasilnya.`
+    );
+  } catch (err) {
+    console.error('SW error:', err);
+    await msg.reply('❌ Gagal posting status: ' + err.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  EXPORTS
 // ═══════════════════════════════════════════════════════════════
 module.exports = {
@@ -632,4 +693,5 @@ module.exports = {
   kbbi,
   shortUrl,
   nulis,
+  postStatus,
 };

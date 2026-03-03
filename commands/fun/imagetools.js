@@ -2,7 +2,162 @@ const { MessageMedia } = require('whatsapp-web.js');
 const axios = require('axios');
 
 // ═══════════════════════════════════════════════════════════════
-//  1. REMOVE BACKGROUND (remove.bg API)
+//  IN-MEMORY CACHE untuk View-Once messages
+//  groupId => [ { id, media, sender, type, timestamp } ]
+//  Auto-expire setelah 10 menit
+// ═══════════════════════════════════════════════════════════════
+
+// chatId => array of cached view-once items
+const viewOnceCache = new Map();
+const CACHE_EXPIRE = 10 * 60 * 1000; // 10 menit
+
+/**
+ * Hook: Dipanggil dari handler.js untuk SETIAP pesan masuk
+ * Detect & cache view-once messages sebelum expired
+ */
+async function interceptViewOnce(msg) {
+  try {
+    // Cek apakah pesan ini view-once
+    const isVO = msg.isViewOnce ||
+                 msg._data?.isViewOnce ||
+                 (msg._data?.message?.viewOnceMessage) ||
+                 (msg._data?.message?.viewOnceMessageV2) ||
+                 (msg._data?.message?.viewOnceMessageV2Extension);
+
+    if (!isVO) return false;
+    if (!msg.hasMedia) return false;
+
+    // Download media SEKARANG sebelum expired
+    const media = await msg.downloadMedia();
+    if (!media || !media.data) return false;
+
+    const contact = await msg.getContact();
+    const chatId = msg.from;
+    const senderName = contact.pushname || contact.name || contact.id.user;
+    const senderId = contact.id._serialized;
+
+    // Simpan ke cache
+    if (!viewOnceCache.has(chatId)) {
+      viewOnceCache.set(chatId, []);
+    }
+
+    const cache = viewOnceCache.get(chatId);
+    const entry = {
+      id: msg.id._serialized,
+      media,
+      senderName,
+      senderId,
+      senderUser: contact.id.user,
+      type: media.mimetype,
+      timestamp: Date.now(),
+    };
+
+    cache.push(entry);
+
+    // Limit cache per chat (max 5 item)
+    while (cache.length > 5) cache.shift();
+
+    // Auto-cleanup expired entries
+    setTimeout(() => {
+      const arr = viewOnceCache.get(chatId);
+      if (arr) {
+        const now = Date.now();
+        const filtered = arr.filter(e => now - e.timestamp < CACHE_EXPIRE);
+        if (filtered.length === 0) {
+          viewOnceCache.delete(chatId);
+        } else {
+          viewOnceCache.set(chatId, filtered);
+        }
+      }
+    }, CACHE_EXPIRE);
+
+    console.log(`👁️ View-once dari ${senderName} di-cache (${media.mimetype})`);
+    return true;
+  } catch (err) {
+    console.error('ViewOnce intercept error:', err.message);
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  1. EKSPOR VIEW-ONCE (!ekspor)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Command: !ekspor
+ * Ekspor view-once terakhir di chat ini
+ */
+async function eksporViewOnce(msg) {
+  const chatId = msg.from;
+  const cache = viewOnceCache.get(chatId);
+
+  if (!cache || cache.length === 0) {
+    return msg.reply(
+      `👁️ *EKSPOR VIEW-ONCE*\n\n` +
+      `Tidak ada pesan view-once yang tersimpan di chat ini.\n\n` +
+      `⚠️ *Cara kerja:*\n` +
+      `Bot otomatis mendeteksi & menyimpan foto/video view-once saat dikirim.\n` +
+      `Lalu ketik \`!ekspor\` untuk mengekspor-nya.\n\n` +
+      `📌 *Catatan:*\n` +
+      `• View-once hanya disimpan *10 menit*\n` +
+      `• Maksimal 5 view-once per chat\n` +
+      `• Bot harus sudah aktif saat view-once dikirim`
+    );
+  }
+
+  // Clean expired entries
+  const now = Date.now();
+  const valid = cache.filter(e => now - e.timestamp < CACHE_EXPIRE);
+  if (valid.length === 0) {
+    viewOnceCache.delete(chatId);
+    return msg.reply('❌ View-once sudah expired (lebih dari 10 menit).');
+  }
+
+  // Ambil yang terbaru
+  const latest = valid[valid.length - 1];
+
+  try {
+    const resultMedia = new MessageMedia(
+      latest.media.mimetype,
+      latest.media.data,
+      latest.media.filename || (latest.type.includes('video') ? 'viewonce.mp4' : 'viewonce.jpg')
+    );
+
+    const duration = formatMs(now - latest.timestamp);
+
+    await msg.reply(resultMedia, undefined, {
+      caption:
+        `👁️ *VIEW-ONCE EXPORTED*\n\n` +
+        `📤 Dari: @${latest.senderUser}\n` +
+        `📁 Type: ${latest.type}\n` +
+        `⏰ ${duration} yang lalu\n\n` +
+        `_Diekspor menggunakan bot_`,
+      mentions: [latest.senderId],
+    });
+
+    // Hapus dari cache setelah diekspor
+    const idx = valid.indexOf(latest);
+    valid.splice(idx, 1);
+    if (valid.length === 0) {
+      viewOnceCache.delete(chatId);
+    } else {
+      viewOnceCache.set(chatId, valid);
+    }
+  } catch (err) {
+    await msg.reply('❌ Gagal mengekspor: ' + err.message);
+  }
+}
+
+function formatMs(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s} detik`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} menit`;
+  return `${Math.floor(m / 60)} jam ${m % 60} menit`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  2. REMOVE BACKGROUND (remove.bg API)
 // ═══════════════════════════════════════════════════════════════
 
 async function removeBg(msg) {
@@ -33,8 +188,6 @@ async function removeBg(msg) {
     if (!media || !media.data) {
       return msg.reply('❌ Gagal mendownload gambar.');
     }
-
-    const imageBuffer = Buffer.from(media.data, 'base64');
 
     const response = await axios({
       method: 'post',
@@ -70,7 +223,7 @@ async function removeBg(msg) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  2. HD ENHANCE (Upscale + Sharpen via Canvas)
+//  3. HD ENHANCE (Upscale + Sharpen via Canvas)
 // ═══════════════════════════════════════════════════════════════
 
 async function hdEnhance(msg) {
@@ -123,23 +276,17 @@ async function hdEnhance(msg) {
     // Draw upscaled
     ctx.drawImage(img, 0, 0, finalWidth, finalHeight);
 
-    // Apply sharpening using unsharp mask technique
-    // Get image data for manipulation
+    // Apply sharpening
     const imageData = ctx.getImageData(0, 0, finalWidth, finalHeight);
     const data = imageData.data;
-
-    // Create a second canvas for blur (unsharp mask)
-    const blurCanvas = createCanvas(finalWidth, finalHeight);
-    const blurCtx = blurCanvas.getContext('2d');
-    blurCtx.drawImage(canvas, 0, 0);
 
     // Simple contrast + brightness enhancement
     const contrast = 1.15;
     const brightness = 5;
     for (let i = 0; i < data.length; i += 4) {
-      data[i] = Math.min(255, Math.max(0, ((data[i] - 128) * contrast) + 128 + brightness));     // R
-      data[i + 1] = Math.min(255, Math.max(0, ((data[i + 1] - 128) * contrast) + 128 + brightness)); // G
-      data[i + 2] = Math.min(255, Math.max(0, ((data[i + 2] - 128) * contrast) + 128 + brightness)); // B
+      data[i] = Math.min(255, Math.max(0, ((data[i] - 128) * contrast) + 128 + brightness));
+      data[i + 1] = Math.min(255, Math.max(0, ((data[i + 1] - 128) * contrast) + 128 + brightness));
+      data[i + 2] = Math.min(255, Math.max(0, ((data[i + 2] - 128) * contrast) + 128 + brightness));
     }
     ctx.putImageData(imageData, 0, 0);
 
@@ -160,53 +307,12 @@ async function hdEnhance(msg) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  3. VIEW-ONCE EXPORT (!ekspor)
-// ═══════════════════════════════════════════════════════════════
-
-async function eksporViewOnce(msg) {
-  const quotedMsg = await msg.getQuotedMessage?.();
-
-  if (!quotedMsg) {
-    return msg.reply(
-      `👁️ *EKSPOR VIEW-ONCE*\n\n` +
-      `Cara pakai: Reply ke foto/video *view-once* → ketik \`!ekspor\`\n\n` +
-      `Bot akan extract media-nya dan kirim ulang sebagai file biasa.`
-    );
-  }
-
-  // Check if it's a view-once message
-  if (!quotedMsg.isViewOnce && quotedMsg.type !== 'image' && quotedMsg.type !== 'video') {
-    return msg.reply('❌ Pesan yang di-reply bukan foto/video view-once!');
-  }
-
-  try {
-    const media = await quotedMsg.downloadMedia();
-    if (!media || !media.data) {
-      return msg.reply('❌ Gagal mendownload media. Mungkin sudah expired.');
-    }
-
-    const contact = await quotedMsg.getContact();
-    const senderName = contact.pushname || contact.name || contact.id.user;
-
-    await msg.reply(media, undefined, {
-      caption:
-        `👁️ *VIEW-ONCE EXPORTED*\n\n` +
-        `📤 Diekspor dari pesan @${contact.id.user}\n` +
-        `📁 Type: ${media.mimetype}\n\n` +
-        `_Diekspor menggunakan bot_`,
-      mentions: [contact.id._serialized],
-    });
-  } catch (err) {
-    await msg.reply('❌ Gagal mengekspor media: ' + err.message);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
 //  EXPORTS
 // ═══════════════════════════════════════════════════════════════
 
 module.exports = {
+  interceptViewOnce,
+  eksporViewOnce,
   removeBg,
   hdEnhance,
-  eksporViewOnce,
 };

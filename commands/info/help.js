@@ -91,6 +91,7 @@ const MENUS = {
       [`${p}kbbi [kata]`, 'Cari arti di KBBI 📖'],
       [`${p}short [url]`, 'Persingkat URL 🔗'],
       [`${p}nulis [teks]`, 'Tulisan tangan ✍️'],
+      [`${p}sw [teks]`, 'Post status/story WA dari bot 📱'],
     ],
   },
   social: {
@@ -113,7 +114,7 @@ const MENUS = {
       [`${p}removebg`, 'Hapus background gambar 🖼️'],
       [`${p}hd`, 'HD enhance / upscale gambar ✨'],
       [`${p}ekspor`, 'Ekspor foto/video view-once 👁️'],
-      [`${p}fakechat [teks]`, 'Fake iPhone chat screenshot 📱'],
+      [`${p}iqc`, 'iPhone Quoted Chat — reply pesan jadi iPhone style 📱'],
     ],
   },
   ai: {

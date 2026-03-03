@@ -1,48 +1,54 @@
 const { MessageMedia } = require('whatsapp-web.js');
 
 // ═══════════════════════════════════════════════════════════════
-//  FAKE iPHONE CHAT GENERATOR
-//  Bikin screenshot chat gaya iPhone WhatsApp (Dark Mode)
-//  Lengkap: emoji reactions, context menu, bubble, blur bg
+//  IQC — iPHONE QUOTED CHAT GENERATOR
+//  Reply ke pesan → bot render jadi screenshot iPhone style
+//  Dark mode, emoji reactions, context menu hold, iOS bubble
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Command: !fakechat [teks]
- * Generate fake iPhone WhatsApp chat screenshot
+ * Command: !iqc  atau  !fakechat [teks]
  *
- * Format advanced:
- *   !fakechat [nama pengirim] | [teks chat] | [waktu]
- *   !fakechat Budi | Halo apa kabar? | 19:23
+ * Mode 1 — Reply ke pesan:  reply pesan → ketik !iqc
+ *          Bot ambil teks dari pesan yang di-reply, render jadi iPhone screenshot
  *
- * Format simple:
- *   !fakechat Halo apa kabar?
+ * Mode 2 — Ketik langsung: !iqc [nama] | [teks] | [waktu]
+ *          Bot render teks yang diketik
  */
 async function fakeChat(msg, args) {
-  const input = args.slice(1).join(' ');
+  let senderName, chatText, timeStr;
 
-  if (!input) {
-    return msg.reply(
-      `📱 *FAKE iPHONE CHAT*\n\n` +
-      `Bikin screenshot chat WhatsApp gaya iPhone! 🍎\n\n` +
-      `*Format:*\n` +
-      `\`!fakechat [teks]\`\n` +
-      `\`!fakechat [nama] | [teks] | [waktu]\`\n\n` +
-      `*Contoh:*\n` +
-      `\`!fakechat Di sana pusing pacaran, di sini pusing codingan.\`\n` +
-      `\`!fakechat Budi | Besok jadi gak? | 21:30\`\n` +
-      `\`!fakechat Sayang ❤️ | I love you moreee | 03:14\``
-    );
-  }
+  // ── Mode 1: Reply ke pesan ──
+  const quotedMsg = await msg.getQuotedMessage?.();
 
-  await msg.reply('⏳ Generating iPhone chat screenshot...');
+  if (quotedMsg) {
+    const contact = await quotedMsg.getContact();
+    senderName = contact.pushname || contact.name || contact.id.user;
+    chatText = quotedMsg.body || '[Media]';
+    // Ambil timestamp dari pesan asli
+    const msgDate = new Date(quotedMsg.timestamp * 1000);
+    timeStr = msgDate.toLocaleTimeString('id-ID', {
+      timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false,
+    });
+  } else {
+    // ── Mode 2: Ketik manual ──
+    const input = args.slice(1).join(' ');
+    if (!input) {
+      return msg.reply(
+        `📱 *IQC — iPhone Quoted Chat*\n\n` +
+        `Bikin screenshot chat WhatsApp rasa iPhone! 🍎\n\n` +
+        `*Cara pakai:*\n` +
+        `1️⃣ Reply ke pesan → ketik \`!iqc\`\n` +
+        `2️⃣ Atau ketik \`!iqc [teks]\`\n` +
+        `3️⃣ Atau \`!iqc [nama] | [teks] | [waktu]\`\n\n` +
+        `*Contoh:*\n` +
+        `• Reply pesan → \`!iqc\`\n` +
+        `• \`!iqc Di sana pusing pacaran, di sini pusing codingan.\`\n` +
+        `• \`!iqc Budi | Besok jadi gak? | 21:30\``
+      );
+    }
 
-  try {
-    const { createCanvas } = require('@napi-rs/canvas');
-
-    // ── Parse Input ──
     const parts = input.split('|').map(s => s.trim());
-    let senderName, chatText, timeStr;
-
     if (parts.length >= 3) {
       senderName = parts[0];
       chatText = parts[1];
@@ -61,221 +67,232 @@ async function fakeChat(msg, args) {
         timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false,
       });
     }
+  }
 
-    // ── Canvas Setup ──
-    const WIDTH = 430;
-    const PADDING = 20;
-    const maxTextWidth = WIDTH - 80; // bubble text area
+  try {
+    const { createCanvas } = require('@napi-rs/canvas');
 
-    // Pre-measure text to determine canvas height
-    const tempCanvas = createCanvas(WIDTH, 100);
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCtx.font = '17px Arial';
+    // ── Measure text for dynamic height ──
+    const WIDTH = 390;
+    const maxBubbleTextW = WIDTH - 95;
 
-    // Word-wrap the text
-    const lines = wrapText(tempCtx, chatText, maxTextWidth);
-    const lineHeight = 24;
-    const textBlockHeight = lines.length * lineHeight;
+    const measureCanvas = createCanvas(WIDTH, 100);
+    const measureCtx = measureCanvas.getContext('2d');
+    measureCtx.font = '16px Arial';
+    const lines = wrapText(measureCtx, chatText, maxBubbleTextW);
+    const lineH = 22;
+    const textBlockH = lines.length * lineH;
 
-    // Calculate component heights
-    const blurBgTop = 0;
-    const reactionsY = 60;       // emoji reactions row
-    const reactionsH = 55;
-    const bubbleY = reactionsY + reactionsH + 10; // bubble chat
-    const bubblePadH = 14;
-    const bubbleTextH = textBlockHeight + 30; // text + timestamp row
-    const bubbleH = bubblePadH * 2 + bubbleTextH;
-    const menuY = bubbleY + bubbleH + 12; // context menu
-    const menuItemH = 50;
+    // ── Layout calculation ──
+    const topPad = 15;
+    const reactionsH = 50;
+    const gapAfterReactions = 8;
+    const bubblePadV = 10;
+    const bubblePadH = 12;
+    const timestampRowH = 18;
+    const bubbleContentH = textBlockH + timestampRowH;
+    const bubbleTotalH = bubblePadV * 2 + bubbleContentH;
+    const gapAfterBubble = 10;
+
+    // Menu items
     const menuItems = [
-      { icon: '⭐', label: 'Beri Bintang' },
-      { icon: '↩️', label: 'Balas' },
-      { icon: '➡️', label: 'Teruskan' },
-      { icon: '📋', label: 'Salin' },
-      { icon: '💬', label: 'Ucapkan' },
-      { icon: '⚠️', label: 'Laporkan' },
+      { label: 'Beri Bintang', icon: '☆' },
+      { label: 'Balas', icon: '↩' },
+      { label: 'Teruskan', icon: '↗' },
+      { label: 'Salin', icon: '⧉' },
+      { label: 'Ucapkan', icon: '💬' },
+      { label: 'Laporkan', icon: '⚠' },
     ];
-    const menuH = menuItems.length * menuItemH + 50; // +50 for Hapus button
-    const totalH = menuY + menuH + 30;
+    const menuItemH = 46;
+    const menuTotalH = menuItems.length * menuItemH;
+    const gapAfterMenu = 8;
+    const deleteH = 46;
+    const bottomPad = 15;
 
-    // Create actual canvas
-    const canvas = createCanvas(WIDTH, totalH);
+    const HEIGHT = topPad + reactionsH + gapAfterReactions +
+                   bubbleTotalH + gapAfterBubble +
+                   menuTotalH + gapAfterMenu +
+                   deleteH + bottomPad;
+
+    // ── Create canvas ──
+    const canvas = createCanvas(WIDTH, HEIGHT);
     const ctx = canvas.getContext('2d');
 
-    // ── Background: Dark blurred WhatsApp ──
-    // Dark background
+    // ── Background: dark blurred WA ──
     ctx.fillStyle = '#0b141a';
-    ctx.fillRect(0, 0, WIDTH, totalH);
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    // Subtle pattern overlay (simulating blurred chat background)
-    ctx.globalAlpha = 0.03;
-    for (let y = 0; y < totalH; y += 30) {
-      for (let x = 0; x < WIDTH; x += 30) {
-        ctx.fillStyle = Math.random() > 0.5 ? '#1a2e38' : '#0d1f2d';
-        ctx.fillRect(x, y, 30, 30);
+    // Subtle chat pattern
+    ctx.globalAlpha = 0.04;
+    for (let y = 0; y < HEIGHT; y += 20) {
+      for (let x = 0; x < WIDTH; x += 20) {
+        if (Math.random() > 0.6) {
+          ctx.fillStyle = '#1a3a2a';
+          ctx.fillRect(x, y, 20, 20);
+        }
       }
     }
     ctx.globalAlpha = 1;
 
-    // Dim overlay (blur effect simulation)
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-    ctx.fillRect(0, 0, WIDTH, totalH);
+    // Dim overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    // ── Emoji Reactions Row ──
+    // ═══════════════════════════════════════
+    //  EMOJI REACTIONS ROW
+    // ═══════════════════════════════════════
     const emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
-    const emojiSize = 38;
-    const emojiGap = 8;
-    const totalEmojiW = emojis.length * (emojiSize + emojiGap) - emojiGap;
-    const emojiStartX = (WIDTH - totalEmojiW) / 2;
+    const emojiCellW = 44;
+    const totalEmojisW = emojis.length * emojiCellW;
+    const pillW = totalEmojisW + 16;
+    const pillH = 42;
+    const pillX = (WIDTH - pillW) / 2;
+    const pillY = topPad + (reactionsH - pillH) / 2;
 
-    // Reactions container (rounded pill)
-    const reactPillW = totalEmojiW + 30;
-    const reactPillH = 48;
-    const reactPillX = (WIDTH - reactPillW) / 2;
-    const reactPillY = reactionsY;
-
-    ctx.fillStyle = '#233239';
+    // Pill background
+    ctx.fillStyle = '#1f2c33';
     ctx.beginPath();
-    ctx.roundRect(reactPillX, reactPillY, reactPillW, reactPillH, 24);
+    ctx.roundRect(pillX, pillY, pillW, pillH, 21);
     ctx.fill();
 
-    // Draw emojis
-    ctx.font = '26px Arial';
+    // Pill border
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.roundRect(pillX, pillY, pillW, pillH, 21);
+    ctx.stroke();
+
+    // Emojis
+    ctx.font = '24px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (let i = 0; i < emojis.length; i++) {
-      const x = emojiStartX + i * (emojiSize + emojiGap) + emojiSize / 2;
-      const y = reactPillY + reactPillH / 2;
-      ctx.fillText(emojis[i], x, y);
+      const x = pillX + 8 + i * emojiCellW + emojiCellW / 2;
+      ctx.fillText(emojis[i], x, pillY + pillH / 2);
     }
 
-    // ── Chat Bubble ──
-    const bubbleX = 20;
-    const bubbleW = Math.min(maxTextWidth + 40, WIDTH - 40);
+    // ═══════════════════════════════════════
+    //  CHAT BUBBLE (green, right-aligned = sent by user)
+    // ═══════════════════════════════════════
+    const bubbleY = topPad + reactionsH + gapAfterReactions;
+    const bubbleW = Math.min(maxBubbleTextW + bubblePadH * 2 + 15, WIDTH - 50);
+    const bubbleX = WIDTH - bubbleW - 16; // right-aligned
 
-    // Bubble background
+    // Bubble background (WhatsApp green)
     ctx.fillStyle = '#005c4b';
     ctx.beginPath();
-    ctx.roundRect(bubbleX, bubbleY, bubbleW, bubbleH, 12);
+    ctx.roundRect(bubbleX, bubbleY, bubbleW, bubbleTotalH, 10);
     ctx.fill();
 
-    // Bubble tail (small triangle on right)
-    ctx.fillStyle = '#005c4b';
+    // Bubble tail (right side)
     ctx.beginPath();
-    ctx.moveTo(bubbleX + bubbleW, bubbleY + 8);
-    ctx.lineTo(bubbleX + bubbleW + 10, bubbleY + 4);
-    ctx.lineTo(bubbleX + bubbleW, bubbleY + 18);
+    ctx.moveTo(bubbleX + bubbleW, bubbleY + 6);
+    ctx.lineTo(bubbleX + bubbleW + 8, bubbleY + 2);
+    ctx.lineTo(bubbleX + bubbleW, bubbleY + 16);
     ctx.closePath();
     ctx.fill();
 
-    // Chat text
+    // Text
     ctx.fillStyle = '#e9edef';
-    ctx.font = '17px Arial';
+    ctx.font = '16px Arial';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-
     for (let i = 0; i < lines.length; i++) {
-      ctx.fillText(lines[i], bubbleX + 14, bubbleY + bubblePadH + i * lineHeight);
+      ctx.fillText(lines[i], bubbleX + bubblePadH, bubbleY + bubblePadV + i * lineH);
     }
 
-    // Timestamp + double check (✓✓)
-    const tsY = bubbleY + bubblePadH + textBlockHeight + 6;
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
-    ctx.font = '12px Arial';
+    // Timestamp + read receipt
+    const tsX = bubbleX + bubbleW - bubblePadH;
+    const tsY = bubbleY + bubblePadV + textBlockH + 2;
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '11px Arial';
     ctx.textAlign = 'right';
-    ctx.fillText(timeStr, bubbleX + bubbleW - 14, tsY);
+    ctx.fillText(timeStr, tsX, tsY);
 
-    // Double check mark
-    const checkX = bubbleX + bubbleW - 14 - ctx.measureText(timeStr).width - 8;
+    // Double blue check ✓✓
+    const checkX = tsX - ctx.measureText(timeStr).width - 6;
     ctx.fillStyle = '#53bdeb';
     ctx.font = '12px Arial';
     ctx.fillText('✓✓', checkX, tsY);
 
-    // ── Context Menu ──
-    const menuX = 20;
-    const menuW = WIDTH - 40;
-    const menuRadius = 14;
+    // ═══════════════════════════════════════
+    //  CONTEXT MENU (iOS hold menu style)
+    // ═══════════════════════════════════════
+    const menuX = 18;
+    const menuW = WIDTH - 36;
+    const menuY = bubbleY + bubbleTotalH + gapAfterBubble;
+    const menuR = 14;
 
     // Menu background
     ctx.fillStyle = '#233138';
     ctx.beginPath();
-    ctx.roundRect(menuX, menuY, menuW, menuItems.length * menuItemH, menuRadius);
+    ctx.roundRect(menuX, menuY, menuW, menuTotalH, menuR);
     ctx.fill();
 
     // Menu items
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-
     for (let i = 0; i < menuItems.length; i++) {
       const itemY = menuY + i * menuItemH;
 
-      // Separator line (except first)
+      // Separator
       if (i > 0) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
         ctx.lineWidth = 0.5;
         ctx.beginPath();
-        ctx.moveTo(menuX + 58, itemY);
+        ctx.moveTo(menuX + 16, itemY);
         ctx.lineTo(menuX + menuW - 16, itemY);
         ctx.stroke();
       }
 
-      // Icon (right side, like iPhone)
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-      ctx.font = '20px Arial';
-      ctx.textAlign = 'right';
-      ctx.fillText(menuItems[i].icon, menuX + menuW - 20, itemY + menuItemH / 2);
-
-      // Label
+      // Label (left)
       ctx.fillStyle = '#e9edef';
-      ctx.font = '16.5px Arial';
+      ctx.font = '16px Arial';
       ctx.textAlign = 'left';
-      ctx.fillText(menuItems[i].label, menuX + 20, itemY + menuItemH / 2);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(menuItems[i].label, menuX + 18, itemY + menuItemH / 2);
+
+      // Icon (right)
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '18px Arial';
+      ctx.textAlign = 'right';
+      ctx.fillText(menuItems[i].icon, menuX + menuW - 18, itemY + menuItemH / 2);
     }
 
-    // ── "Hapus" button (red, separated) ──
-    const hapusY = menuY + menuItems.length * menuItemH + 10;
-    const hapusH = 48;
+    // ═══════════════════════════════════════
+    //  DELETE BUTTON (red, separated)
+    // ═══════════════════════════════════════
+    const delY = menuY + menuTotalH + gapAfterMenu;
+    const delH = deleteH;
 
     ctx.fillStyle = '#233138';
     ctx.beginPath();
-    ctx.roundRect(menuX, hapusY, menuW, hapusH, menuRadius);
+    ctx.roundRect(menuX, delY, menuW, delH, menuR);
     ctx.fill();
 
-    // Trash icon
+    // "Hapus" text (red)
     ctx.fillStyle = '#ef4444';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Hapus', menuX + 18, delY + delH / 2);
+
+    // Trash icon (right)
     ctx.font = '18px Arial';
     ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🗑️', menuX + menuW - 20, hapusY + hapusH / 2);
+    ctx.fillText('🗑', menuX + menuW - 18, delY + delH / 2);
 
-    // "Hapus" text
-    ctx.fillStyle = '#ef4444';
-    ctx.font = '16.5px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('Hapus', menuX + 20, hapusY + hapusH / 2);
-
-    // ── Timestamp watermark at bottom ──
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.font = '10px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('00:0', WIDTH - 30, hapusY + hapusH - 5);
-
-    // ── Export ──
+    // ═══════════════════════════════════════
+    //  RENDER & SEND
+    // ═══════════════════════════════════════
     const buffer = canvas.toBuffer('image/png');
     const base64 = buffer.toString('base64');
-    const media = new MessageMedia('image/png', base64, 'fakechat.png');
+    const media = new MessageMedia('image/png', base64, 'iqc.png');
 
     await msg.reply(media, undefined, {
-      caption:
-        `📱 *FAKE iPHONE CHAT* 🍎\n\n` +
-        `💬 "${chatText}"\n` +
-        `👤 ${senderName}\n` +
-        `🕐 ${timeStr}\n\n` +
-        `_Generated by WA-BOT_`,
+      caption: `📱 *IQC — iPhone Quoted Chat* 🍎`,
     });
   } catch (err) {
-    console.error('FakeChat error:', err);
-    await msg.reply('❌ Gagal generate fake chat: ' + err.message);
+    console.error('IQC error:', err);
+    await msg.reply('❌ Gagal generate IQC: ' + err.message);
   }
 }
 
