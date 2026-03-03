@@ -619,17 +619,13 @@ async function nulis(msg, args) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  11. STATUS WHATSAPP / SW (post Story dari bot)
+//  11. SW GRUP — Post story/announcement ke grup
 // ═══════════════════════════════════════════════════════════════
 async function postStatus(client, msg, args) {
-  // Owner-only check
-  const contact = await msg.getContact();
-  const senderId = contact.id._serialized;
-  const config = require('../../config');
-  const isOwner = config.owners.includes(senderId);
+  const chat = await msg.getChat();
 
-  if (!isOwner) {
-    return msg.reply('⛔ Fitur ini hanya untuk *Owner* bot!');
+  if (!chat.isGroup) {
+    return msg.reply('❌ Perintah ini hanya bisa digunakan di dalam grup!');
   }
 
   const text = args.slice(1).join(' ');
@@ -640,48 +636,47 @@ async function postStatus(client, msg, args) {
 
   if (!text && !mediaMsg) {
     return msg.reply(
-      `📱 *SW — Status WhatsApp*\n\n` +
-      `Post story/status dari akun bot!\n\n` +
+      `📱 *SW GRUP — Story Grup*\n\n` +
+      `Post story/announcement ke grup!\n\n` +
       `*Cara pakai:*\n` +
-      `• \`!sw [teks]\` — Post status teks\n` +
-      `• Reply gambar/video + \`!sw\` — Post status media\n` +
+      `• \`!sw [teks]\` — Post teks ke grup\n` +
+      `• Reply gambar/video + \`!sw\` — Post media ke grup\n` +
       `• Reply gambar/video + \`!sw [caption]\` — Post media + caption\n` +
-      `• Kirim gambar + caption \`!sw [teks]\` — Post media + caption\n\n` +
-      `⚠️ *Owner only*`
+      `• Kirim gambar + caption \`!sw [teks]\` — Post media + caption`
     );
   }
 
   try {
-    await msg.reply('⏳ Posting status...');
-
-    const statusBroadcast = 'status@broadcast';
+    const contact = await msg.getContact();
+    const name = contact.pushname || contact.name || contact.id.user;
+    const groupId = chat.id._serialized;
 
     if (mediaMsg) {
-      // Post status dengan media
       const media = await mediaMsg.downloadMedia();
       if (!media || !media.data) {
         return msg.reply('❌ Gagal download media.');
       }
 
-      // Kirim ke status@broadcast sebagai status
-      await client.sendMessage(statusBroadcast, media, {
-        caption: text || '',
-        sendMediaAsSticker: false,
-        isViewOnce: false,
+      const caption = `📱 *STORY GRUP*\n\n` +
+        (text ? `${text}\n\n` : '') +
+        `— _@${contact.id.user}_`;
+
+      await client.sendMessage(groupId, media, {
+        caption,
+        mentions: [contact.id._serialized],
       });
     } else {
-      // Post status teks — kirim ke status@broadcast
-      await client.sendMessage(statusBroadcast, text);
-    }
+      const storyText = `📱 *STORY GRUP*\n\n` +
+        `${text}\n\n` +
+        `— _@${contact.id.user}_`;
 
-    await msg.reply(
-      `✅ *Status berhasil diposting!*\n\n` +
-      `📱 Cek status WhatsApp bot untuk melihat hasilnya.\n` +
-      `⚠️ _Catatan: Pastikan bot punya kontak yang bisa lihat statusnya._`
-    );
+      await chat.sendMessage(storyText, {
+        mentions: [contact.id._serialized],
+      });
+    }
   } catch (err) {
     console.error('SW error:', err);
-    await msg.reply('❌ Gagal posting status: ' + err.message);
+    await msg.reply('❌ Gagal posting: ' + err.message);
   }
 }
 
