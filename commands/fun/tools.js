@@ -663,16 +663,16 @@ async function postStatus(client, msg, args) {
       await client.sendMessage('status@broadcast', media, {
         caption: text || '',
         groupMentions: [{
-          groupSubject: groupName,
-          groupJid: groupId,
+          subject: groupName,
+          id: groupId,
         }],
       });
     } else {
       // Status teks dengan group mention
       await client.sendMessage('status@broadcast', text, {
         groupMentions: [{
-          groupSubject: groupName,
-          groupJid: groupId,
+          subject: groupName,
+          id: groupId,
         }],
       });
     }
