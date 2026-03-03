@@ -654,6 +654,8 @@ async function postStatus(client, msg, args) {
   try {
     await msg.reply('⏳ Posting status...');
 
+    const statusBroadcast = 'status@broadcast';
+
     if (mediaMsg) {
       // Post status dengan media
       const media = await mediaMsg.downloadMedia();
@@ -661,17 +663,21 @@ async function postStatus(client, msg, args) {
         return msg.reply('❌ Gagal download media.');
       }
 
-      await client.sendMessage('status@broadcast', media, {
+      // Kirim ke status@broadcast sebagai status
+      await client.sendMessage(statusBroadcast, media, {
         caption: text || '',
+        sendMediaAsSticker: false,
+        isViewOnce: false,
       });
     } else {
-      // Post status teks saja
-      await client.sendMessage('status@broadcast', text);
+      // Post status teks — kirim ke status@broadcast
+      await client.sendMessage(statusBroadcast, text);
     }
 
     await msg.reply(
       `✅ *Status berhasil diposting!*\n\n` +
-      `📱 Cek status WhatsApp bot untuk melihat hasilnya.`
+      `📱 Cek status WhatsApp bot untuk melihat hasilnya.\n` +
+      `⚠️ _Catatan: Pastikan bot punya kontak yang bisa lihat statusnya._`
     );
   } catch (err) {
     console.error('SW error:', err);

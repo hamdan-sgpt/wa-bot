@@ -483,9 +483,19 @@ async function profileCard(client, msg) {
     // ── AVATAR: Fetch profile picture ──
     let hasProfilePic = false;
     try {
-      const ppUrl = await client.getProfilePicUrl(userId);
+      // Try multiple ID formats for getting profile pic
+      let ppUrl = null;
+      try { ppUrl = await client.getProfilePicUrl(userId); } catch (e) {}
+      if (!ppUrl) {
+        try { ppUrl = await client.getProfilePicUrl(target.id.user + '@c.us'); } catch (e) {}
+      }
+
       if (ppUrl) {
-        const response = await axios.get(ppUrl, { responseType: 'arraybuffer', timeout: 10000 });
+        const response = await axios.get(ppUrl, {
+          responseType: 'arraybuffer',
+          timeout: 15000,
+          headers: { 'User-Agent': 'WhatsApp/2.23' },
+        });
         const imgBuffer = Buffer.from(response.data);
         const avatarImg = await loadImage(imgBuffer);
 
@@ -500,7 +510,7 @@ async function profileCard(client, msg) {
         hasProfilePic = true;
       }
     } catch (ppErr) {
-      // Profile pic not available, use fallback
+      console.log('Profile pic error:', ppErr.message);
     }
 
     // Fallback: initial letter if no profile pic
