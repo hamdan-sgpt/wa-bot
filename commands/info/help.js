@@ -93,6 +93,18 @@ const MENUS = {
       [`${p}nulis [teks]`, 'Tulisan tangan ✍️'],
     ],
   },
+  social: {
+    emoji: '👥',
+    title: 'SOCIAL & LEVELING',
+    desc: 'Sistem sosial interaktif',
+    items: [
+      [`${p}afk [alasan]`, 'Set status AFK 💤'],
+      [`${p}level`, 'Lihat level & XP kamu 📊'],
+      [`${p}leaderboard`, 'Top 10 paling aktif 🏆'],
+      [`${p}confess [pesan]`, 'Pesan anonim ke grup 🎭'],
+      [`${p}profile @user`, 'Kartu profil user 🪪'],
+    ],
+  },
   ai: {
     emoji: '🧠',
     title: 'AI CHATBOT',

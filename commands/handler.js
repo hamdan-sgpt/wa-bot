@@ -10,6 +10,7 @@ const { toSticker, toImage } = require('./fun/sticker');
 const { tiktokVideo, tiktokAudio } = require('./fun/tiktok');
 const { bratSticker } = require('./fun/brat');
 const { generateQR, remind, randomPick, poll, textEffect, countdown, cuaca, kbbi, shortUrl, nulis } = require('./fun/tools');
+const { setAfk, checkAfkSender, checkAfkMentions, processXp, showLevel, leaderboard, confess, profileCard } = require('./fun/social');
 const { showHelp } = require('./info/help');
 const { showIntro } = require('./info/intro');
 const { runtime, botInfo } = require('./info/runtime');
@@ -42,6 +43,20 @@ async function handleMessage(client, msg) {
 
     // Anti-spam check
     if (groupData.antiSpam && await handleAntiSpam(client, msg, groupData)) return;
+  }
+
+  // ── AFK & LEVELING HOOKS (runs on EVERY message, before command check) ──
+  try {
+    // Check if sender was AFK → auto-remove AFK
+    await checkAfkSender(msg);
+
+    // Check if message mentions someone who is AFK → notify
+    await checkAfkMentions(msg);
+
+    // Process XP for leveling (grup only)
+    await processXp(msg, chat);
+  } catch (err) {
+    // Silent fail — don't block message processing
   }
 
   // ── COMMAND CHECK ──
@@ -352,9 +367,34 @@ async function handleMessage(client, msg) {
       await myRole(msg);
       break;
 
+    // ── SOCIAL COMMANDS ──
+    case 'afk':
+      await setAfk(msg, args);
+      break;
+
+    case 'level':
+    case 'rank':
+      await showLevel(msg);
+      break;
+
+    case 'leaderboard':
+    case 'lb':
+    case 'top':
+      await leaderboard(msg);
+      break;
+
+    case 'confess':
+    case 'anon':
+      await confess(client, msg, args);
+      break;
+
+    case 'profile':
+    case 'profil':
+      await profileCard(msg);
+      break;
+
     default:
-      // Unknown command — silently ignore or optionally respond
-      // await msg.reply(`❓ Perintah tidak dikenal. Ketik ${prefix}help untuk melihat daftar perintah.`);
+      // Unknown command — silently ignore
       break;
   }
 }
