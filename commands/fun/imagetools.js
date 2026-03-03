@@ -200,8 +200,11 @@ async function removeBg(msg) {
 
     const resultBase64 = Buffer.from(response.data).toString('base64');
     const resultMedia = new MessageMedia('image/png', resultBase64, 'nobg.png');
+
+    // Kirim sebagai DOCUMENT agar PNG transparan tidak diconvert jadi JPEG
     await msg.reply(resultMedia, undefined, {
       caption: `✅ *Background berhasil dihapus!*\n\n_Powered by remove.bg_`,
+      sendMediaAsDocument: true,
     });
   } catch (err) {
     if (err.response?.status === 402) await msg.reply('❌ Kuota remove.bg habis (50/bulan).');
