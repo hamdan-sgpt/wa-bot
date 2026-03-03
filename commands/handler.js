@@ -11,6 +11,7 @@ const { tiktokVideo, tiktokAudio } = require('./fun/tiktok');
 const { bratSticker } = require('./fun/brat');
 const { generateQR, remind, randomPick, poll, textEffect, countdown, cuaca, kbbi, shortUrl, nulis } = require('./fun/tools');
 const { setAfk, checkAfkSender, checkAfkMentions, processXp, showLevel, leaderboard, confess, profileCard } = require('./fun/social');
+const { removeBg, hdEnhance, eksporViewOnce } = require('./fun/imagetools');
 const { showHelp } = require('./info/help');
 const { showIntro } = require('./info/intro');
 const { runtime, botInfo } = require('./info/runtime');
@@ -369,7 +370,7 @@ async function handleMessage(client, msg) {
 
     // ── SOCIAL COMMANDS ──
     case 'afk':
-      await setAfk(msg, args);
+      await setAfk(client, msg, args);
       break;
 
     case 'level':
@@ -393,6 +394,22 @@ async function handleMessage(client, msg) {
       await profileCard(client, msg);
       break;
 
+    // ── IMAGE TOOLS ──
+    case 'removebg':
+    case 'nobg':
+      await removeBg(msg);
+      break;
+
+    case 'hd':
+    case 'enhance':
+      await hdEnhance(msg);
+      break;
+
+    case 'ekspor':
+    case 'viewonce':
+      await eksporViewOnce(msg);
+      break;
+
     default:
       // Unknown command — silently ignore
       break;
@@ -409,11 +426,147 @@ async function handleGroupJoin(client, notification) {
     const addedMembers = notification.recipientIds;
     for (const memberId of addedMembers) {
       const contact = await client.getContactById(memberId);
-      const welcomeMsg = groupData.welcomeMsg
-        .replace('@user', `@${contact.id.user}`)
-        .replace('@group', group.name);
+      const name = contact.pushname || contact.name || contact.id.user;
+      const memberCount = group.participants.length;
 
-      await group.sendMessage(welcomeMsg, { mentions: [contact.id._serialized] });
+      // ── Try Canvas Welcome Card ──
+      try {
+        const { createCanvas, loadImage } = require('@napi-rs/canvas');
+        const axios = require('axios');
+        const { MessageMedia } = require('whatsapp-web.js');
+
+        const width = 700;
+        const height = 350;
+        const canvas = createCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+
+        // Background gradient
+        const gradient = ctx.createLinearGradient(0, 0, width, height);
+        gradient.addColorStop(0, '#0f2027');
+        gradient.addColorStop(0.5, '#203a43');
+        gradient.addColorStop(1, '#2c5364');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+
+        // Border
+        ctx.strokeStyle = '#4ecdc4';
+        ctx.lineWidth = 3;
+        ctx.roundRect(8, 8, width - 16, height - 16, 16);
+        ctx.stroke();
+
+        // Decorative circles
+        ctx.globalAlpha = 0.08;
+        ctx.beginPath();
+        ctx.arc(600, 50, 120, 0, Math.PI * 2);
+        ctx.fillStyle = '#4ecdc4';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(100, 300, 80, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // "WELCOME" header
+        ctx.fillStyle = '#4ecdc4';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('W E L C O M E', width / 2, 45);
+
+        // Divider line
+        ctx.strokeStyle = 'rgba(78, 205, 196, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(200, 55);
+        ctx.lineTo(500, 55);
+        ctx.stroke();
+
+        // ── Profile Picture ──
+        const avatarSize = 100;
+        const avatarX = width / 2;
+        const avatarY = 125;
+        let hasAvatar = false;
+
+        try {
+          const ppUrl = await client.getProfilePicUrl(memberId);
+          if (ppUrl) {
+            const response = await axios.get(ppUrl, { responseType: 'arraybuffer', timeout: 10000 });
+            const avatarImg = await loadImage(Buffer.from(response.data));
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(avatarX, avatarY, avatarSize / 2, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(avatarImg, avatarX - avatarSize / 2, avatarY - avatarSize / 2, avatarSize, avatarSize);
+            ctx.restore();
+            hasAvatar = true;
+          }
+        } catch (e) {}
+
+        if (!hasAvatar) {
+          ctx.beginPath();
+          ctx.arc(avatarX, avatarY, avatarSize / 2, 0, Math.PI * 2);
+          ctx.fillStyle = '#4ecdc4';
+          ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 42px Arial';
+          ctx.fillText(name.charAt(0).toUpperCase(), avatarX, avatarY + 14);
+        }
+
+        // Avatar ring
+        ctx.beginPath();
+        ctx.arc(avatarX, avatarY, avatarSize / 2 + 3, 0, Math.PI * 2);
+        ctx.strokeStyle = '#4ecdc4';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // User name
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 28px Arial';
+        ctx.textAlign = 'center';
+        const displayName = name.length > 25 ? name.substring(0, 25) + '...' : name;
+        ctx.fillText(displayName, width / 2, 210);
+
+        // Phone number
+        ctx.fillStyle = '#aaa';
+        ctx.font = '14px Arial';
+        ctx.fillText(`+${contact.id.user}`, width / 2, 232);
+
+        // Group info
+        ctx.fillStyle = '#4ecdc4';
+        ctx.font = 'bold 18px Arial';
+        const groupName = group.name.length > 35 ? group.name.substring(0, 35) + '...' : group.name;
+        ctx.fillText(groupName, width / 2, 270);
+
+        // Member count
+        ctx.fillStyle = '#888';
+        ctx.font = '14px Arial';
+        ctx.fillText(`Member ke-${memberCount}`, width / 2, 295);
+
+        // Bottom message
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.font = '12px Arial';
+        ctx.fillText('Selamat bergabung! Jangan lupa baca rules ya \ud83d\ude0a', width / 2, 330);
+
+        ctx.textAlign = 'left';
+
+        const buffer = canvas.toBuffer('image/png');
+        const base64 = buffer.toString('base64');
+        const media = new MessageMedia('image/png', base64, 'welcome.png');
+
+        const captionText = groupData.welcomeMsg
+          .replace('@user', `@${contact.id.user}`)
+          .replace('@group', group.name);
+
+        await group.sendMessage(media, {
+          caption: captionText,
+          mentions: [contact.id._serialized],
+        });
+      } catch (canvasErr) {
+        // Fallback: text-only welcome
+        const welcomeMsg = groupData.welcomeMsg
+          .replace('@user', `@${contact.id.user}`)
+          .replace('@group', group.name);
+        await group.sendMessage(welcomeMsg, { mentions: [contact.id._serialized] });
+      }
     }
   } catch (err) {
     console.error('Welcome error:', err.message);

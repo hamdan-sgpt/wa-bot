@@ -40,6 +40,9 @@ module.exports = {
     maxCredits: 999,        // Maksimal kredit yang bisa dimiliki
   },
 
+  // ==================== REMOVE.BG ====================
+  removeBgApiKey: process.env.REMOVEBG_API_KEY || 'WbuZ8h7Hegf1T3VNh9NjJcNV',
+
   // ==================== MISC ====================
   startTime: Date.now(),
 };

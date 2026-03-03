@@ -65,27 +65,77 @@ function formatDuration(ms) {
 }
 
 /**
- * Command: !afk [alasan]
- * Set user sebagai AFK
+ * Command: !afk [menit] [alasan]  atau  !afk [alasan]
+ * Set user sebagai AFK, opsional dengan timer auto-expire
  */
-async function setAfk(msg, args) {
+async function setAfk(client, msg, args) {
   const contact = await msg.getContact();
   const userId = contact.id._serialized;
-  const reason = args.slice(1).join(' ') || 'Tidak ada alasan';
+  const chatId = msg.from;
   const name = contact.pushname || contact.name || contact.id.user;
 
-  afkUsers.set(userId, {
+  // Cek apakah argumen pertama angka (menit)
+  let minutes = null;
+  let reason;
+  if (args[1] && !isNaN(args[1]) && parseInt(args[1]) > 0) {
+    minutes = parseInt(args[1]);
+    if (minutes > 1440) minutes = 1440; // max 24 jam
+    reason = args.slice(2).join(' ') || 'Tidak ada alasan';
+  } else {
+    reason = args.slice(1).join(' ') || 'Tidak ada alasan';
+  }
+
+  // Clear previous timer if exists
+  const prevAfk = afkUsers.get(userId);
+  if (prevAfk && prevAfk.timer) clearTimeout(prevAfk.timer);
+
+  const afkData = {
     reason,
     since: Date.now(),
     name,
-  });
+    minutes,
+    timer: null,
+  };
+
+  // Set auto-expire timer jika ada durasi
+  if (minutes) {
+    afkData.timer = setTimeout(async () => {
+      if (afkUsers.has(userId)) {
+        afkUsers.delete(userId);
+        try {
+          const chat = await client.getChatById(chatId);
+          await chat.sendMessage(
+            `⏰ *AFK EXPIRED*\n\n` +
+            `@${contact.id.user} sudah tidak AFK lagi!\n` +
+            `⏱️ Durasi: *${minutes} menit*\n` +
+            `📝 Alasan AFK: _${reason}_`,
+            { mentions: [userId] }
+          );
+        } catch (err) {
+          console.error('AFK timer error:', err.message);
+        }
+      }
+    }, minutes * 60 * 1000);
+  }
+
+  afkUsers.set(userId, afkData);
+
+  const timerText = minutes
+    ? `⏱️ Timer: *${minutes} menit* (otomatis expire)\n`
+    : `⏱️ Timer: _Tidak ada (manual)_\n`;
+
+  const expireTime = minutes
+    ? new Date(Date.now() + minutes * 60000).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' })
+    : null;
 
   await msg.reply(
     `💤 *AFK AKTIF*\n\n` +
     `@${contact.id.user} sekarang sedang AFK\n` +
-    `📝 Alasan: _${reason}_\n\n` +
-    `_Bot akan otomatis memberitahu jika ada yang mention kamu._\n` +
-    `_AFK akan hilang saat kamu kirim pesan lagi._`,
+    `📝 Alasan: _${reason}_\n` +
+    timerText +
+    (expireTime ? `🕐 Expire: ±*${expireTime} WIB*\n` : '') +
+    `\n_Bot akan otomatis memberitahu jika ada yang mention kamu._\n` +
+    `_AFK hilang saat kamu kirim pesan atau timer habis._`,
     undefined,
     { mentions: [userId] }
   );

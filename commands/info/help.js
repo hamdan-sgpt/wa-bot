@@ -98,11 +98,21 @@ const MENUS = {
     title: 'SOCIAL & LEVELING',
     desc: 'Sistem sosial interaktif',
     items: [
-      [`${p}afk [alasan]`, 'Set status AFK 💤'],
+      [`${p}afk [mnt] [alasan]`, 'Set AFK + timer opsional 💤'],
       [`${p}level`, 'Lihat level & XP kamu 📊'],
       [`${p}leaderboard`, 'Top 10 paling aktif 🏆'],
       [`${p}confess [pesan]`, 'Pesan anonim ke grup 🎭'],
       [`${p}profile @user`, 'Kartu profil user 🪪'],
+    ],
+  },
+  imagetools: {
+    emoji: '🖼️',
+    title: 'IMAGE TOOLS',
+    desc: 'Edit & manipulasi gambar',
+    items: [
+      [`${p}removebg`, 'Hapus background gambar 🖼️'],
+      [`${p}hd`, 'HD enhance / upscale gambar ✨'],
+      [`${p}ekspor`, 'Ekspor foto/video view-once 👁️'],
     ],
   },
   ai: {
