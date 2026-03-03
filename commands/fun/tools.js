@@ -619,7 +619,9 @@ async function nulis(msg, args) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  11. SW GRUP — Post story/announcement ke grup
+//  11. SW GRUP — Post story di tab Status atas nama grup
+//  Kirim media ke status@broadcast + group JID mention
+//  Hasilnya: muncul di tab Status sebagai "story grup"
 // ═══════════════════════════════════════════════════════════════
 async function postStatus(client, msg, args) {
   const chat = await msg.getChat();
@@ -631,25 +633,24 @@ async function postStatus(client, msg, args) {
   const text = args.slice(1).join(' ');
   const quotedMsg = await msg.getQuotedMessage?.();
 
-  // Cek apakah ada media (reply ke gambar/video atau kirim langsung)
+  // Cek media (reply ke gambar/video atau kirim langsung)
   const mediaMsg = quotedMsg?.hasMedia ? quotedMsg : (msg.hasMedia ? msg : null);
 
-  if (!text && !mediaMsg) {
+  if (!mediaMsg && !text) {
     return msg.reply(
       `📱 *SW GRUP — Story Grup*\n\n` +
-      `Post story/announcement ke grup!\n\n` +
+      `Post story/status yang muncul di tab Status atas nama grup!\n\n` +
       `*Cara pakai:*\n` +
-      `• \`!sw [teks]\` — Post teks ke grup\n` +
-      `• Reply gambar/video + \`!sw\` — Post media ke grup\n` +
-      `• Reply gambar/video + \`!sw [caption]\` — Post media + caption\n` +
-      `• Kirim gambar + caption \`!sw [teks]\` — Post media + caption`
+      `• Kirim gambar + caption \`!sw\`\n` +
+      `• Reply gambar/video + \`!sw\`\n` +
+      `• Reply gambar + \`!sw [caption]\`\n\n` +
+      `📌 Hasilnya muncul di tab *Status/Updates* WhatsApp sebagai story grup`
     );
   }
 
   try {
-    const contact = await msg.getContact();
-    const name = contact.pushname || contact.name || contact.id.user;
     const groupId = chat.id._serialized;
+    const groupName = chat.name;
 
     if (mediaMsg) {
       const media = await mediaMsg.downloadMedia();
@@ -657,26 +658,32 @@ async function postStatus(client, msg, args) {
         return msg.reply('❌ Gagal download media.');
       }
 
-      const caption = `📱 *STORY GRUP*\n\n` +
-        (text ? `${text}\n\n` : '') +
-        `— _@${contact.id.user}_`;
-
-      await client.sendMessage(groupId, media, {
-        caption,
-        mentions: [contact.id._serialized],
+      // Kirim ke status@broadcast dengan group mention
+      // groupMentions membuat status muncul sebagai "story grup"
+      await client.sendMessage('status@broadcast', media, {
+        caption: text || '',
+        groupMentions: [{
+          groupSubject: groupName,
+          groupJid: groupId,
+        }],
       });
     } else {
-      const storyText = `📱 *STORY GRUP*\n\n` +
-        `${text}\n\n` +
-        `— _@${contact.id.user}_`;
-
-      await chat.sendMessage(storyText, {
-        mentions: [contact.id._serialized],
+      // Status teks dengan group mention
+      await client.sendMessage('status@broadcast', text, {
+        groupMentions: [{
+          groupSubject: groupName,
+          groupJid: groupId,
+        }],
       });
     }
+
+    await msg.reply(
+      `✅ *Berhasil memposting story di grup!*\n\n` +
+      `📱 Cek tab *Status/Updates* WhatsApp untuk melihat hasilnya.`
+    );
   } catch (err) {
-    console.error('SW error:', err);
-    await msg.reply('❌ Gagal posting: ' + err.message);
+    console.error('SW Grup error:', err);
+    await msg.reply('❌ Gagal posting story: ' + err.message);
   }
 }
 
