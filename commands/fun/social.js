@@ -1,4 +1,5 @@
 const { MessageMedia } = require('whatsapp-web.js');
+const axios = require('axios');
 
 // ═══════════════════════════════════════════════════════════════
 //  IN-MEMORY STATE
@@ -368,7 +369,7 @@ async function confess(client, msg, args) {
  * Command: !profile [@user]
  * Generate kartu profil user
  */
-async function profileCard(msg) {
+async function profileCard(client, msg) {
   const chat = await msg.getChat();
   const mentions = await msg.getMentions();
   const target = mentions.length > 0 ? mentions[0] : await msg.getContact();
@@ -402,7 +403,7 @@ async function profileCard(msg) {
     : `🟢 Online`;
 
   try {
-    const { createCanvas } = require('@napi-rs/canvas');
+    const { createCanvas, loadImage } = require('@napi-rs/canvas');
 
     const width = 600;
     const height = 340;
@@ -429,21 +430,48 @@ async function profileCard(msg) {
     ctx.roundRect(14, 14, width - 28, height - 28, 12);
     ctx.stroke();
 
-    // Avatar circle placeholder
+    // ── AVATAR: Fetch profile picture ──
+    let hasProfilePic = false;
+    try {
+      const ppUrl = await client.getProfilePicUrl(userId);
+      if (ppUrl) {
+        const response = await axios.get(ppUrl, { responseType: 'arraybuffer', timeout: 10000 });
+        const imgBuffer = Buffer.from(response.data);
+        const avatarImg = await loadImage(imgBuffer);
+
+        // Draw circular avatar
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(80, 90, 45, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(avatarImg, 35, 45, 90, 90);
+        ctx.restore();
+        hasProfilePic = true;
+      }
+    } catch (ppErr) {
+      // Profile pic not available, use fallback
+    }
+
+    // Fallback: initial letter if no profile pic
+    if (!hasProfilePic) {
+      ctx.beginPath();
+      ctx.arc(80, 90, 45, 0, Math.PI * 2);
+      ctx.fillStyle = '#7c5cbf';
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 36px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(name.charAt(0).toUpperCase(), 80, 103);
+      ctx.textAlign = 'left';
+    }
+
+    // Avatar ring border
     ctx.beginPath();
     ctx.arc(80, 90, 45, 0, Math.PI * 2);
-    ctx.fillStyle = '#7c5cbf';
-    ctx.fill();
     ctx.strokeStyle = '#a78bfa';
     ctx.lineWidth = 3;
     ctx.stroke();
-
-    // Avatar initial
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 36px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(name.charAt(0).toUpperCase(), 80, 103);
-    ctx.textAlign = 'left';
 
     // Name
     ctx.fillStyle = '#fff';

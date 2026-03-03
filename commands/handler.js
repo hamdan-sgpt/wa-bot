@@ -390,7 +390,7 @@ async function handleMessage(client, msg) {
 
     case 'profile':
     case 'profil':
-      await profileCard(msg);
+      await profileCard(client, msg);
       break;
 
     default:
