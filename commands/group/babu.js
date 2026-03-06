@@ -147,16 +147,24 @@ async function loadBabuList() {
   if (!BABU_BIN_ID) {
     console.warn('⚠️ JSONBIN_BABU_BIN_ID not set! Using in-memory initial data.');
     cachedList = [...INITIAL_BABU];
+    cachedList.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
     return cachedList;
   }
 
   try {
-    cachedList = await readBin(BABU_BIN_ID);
+    const list = await readBin(BABU_BIN_ID);
+    list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    cachedList = list;
     console.log(`📋 Loaded ${cachedList.length} babu from JSONBin`);
+    
+    // Asynchronously save the newly sorted list back to JSONBin
+    saveBabuList(cachedList).catch(() => {});
+    
     return cachedList;
   } catch (err) {
     console.error('⚠️ Error loading babu list from JSONBin:', err.message);
     cachedList = [...INITIAL_BABU];
+    cachedList.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
     return cachedList;
   }
 }
@@ -198,6 +206,7 @@ async function addBabu(client, msg, args) {
 
   const list = await loadBabuList();
   list.push({ name: name, note: '' });
+  list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
   await saveBabuList(list);
 
   const chat = await msg.getChat();

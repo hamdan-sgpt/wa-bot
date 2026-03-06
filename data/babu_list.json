@@ -1,133 +1,526 @@
 [
-  { "name": "NEVERMIN", "note": "" },
-  { "name": "𝙁𝙇𝙊𝙓𝙓𝙄", "note": "" },
-  { "name": "LAVEXRAN", "note": "" },
-  { "name": "NEXSTALEVERZ", "note": "" },
-  { "name": "BRUTAL CS", "note": "" },
-  { "name": "FORIUS", "note": "" },
-  { "name": "BLACK ROSE", "note": "" },
-  { "name": "AUSTRALIA", "note": "" },
-  { "name": "VOXCAN", "note": "" },
-  { "name": "MBOJO STARS", "note": "" },
-  { "name": "REMINDER", "note": "" },
-  { "name": "VENXCYURS", "note": "" },
-  { "name": "INVESTARS44", "note": "" },
-  { "name": "NAMIKAZE25", "note": "" },
-  { "name": "NOXFOURTY", "note": "" },
-  { "name": "FIGHTER", "note": "" },
-  { "name": "SILENTLITE", "note": "" },
-  { "name": "DREAMER", "note": "" },
-  { "name": "RBBS NEW ERA", "note": "" },
-  { "name": "MARGA 244", "note": "" },
-  { "name": "NEXSYLEN", "note": "" },
-  { "name": "NOTFACE", "note": "" },
-  { "name": "VLOXOEE", "note": "" },
-  { "name": "4GEORCOUS", "note": "" },
-  { "name": "NOCURE", "note": "" },
-  { "name": "VARNIY 2K25", "note": "" },
-  { "name": "clipsey starr", "note": "" },
-  { "name": "VOLNAITE", "note": "" },
-  { "name": "NARVY 2K25", "note": "" },
-  { "name": "MARGA 24", "note": "KACUNG GAADA PERLAWANAN" },
-  { "name": "VLEXTNDER", "note": "" },
-  { "name": "VAMPIRE", "note": "" },
-  { "name": "VILENZSYTAR", "note": "" },
-  { "name": "SG NEW", "note": "" },
-  { "name": "GENESIS", "note": "" },
-  { "name": "PETARUNK", "note": "" },
-  { "name": "NEVERLUS", "note": "" },
-  { "name": "ARCHARY", "note": "" },
-  { "name": "XC", "note": "" },
-  { "name": "EXANNATOS", "note": "" },
-  { "name": "911 PRIDE", "note": "" },
-  { "name": "ACUMALAKA", "note": "" },
-  { "name": "INVICTUS", "note": "" },
-  { "name": "MARGA 17 KW", "note": "" },
-  { "name": "VIPERCEES INTI", "note": "" },
-  { "name": "NEVEROR JR", "note": "" },
-  { "name": "VIOLANCE 7", "note": "" },
-  { "name": "ALL THREE", "note": "" },
-  { "name": "HAOTIAN", "note": "" },
-  { "name": "NJ", "note": "" },
-  { "name": "Nelvence", "note": "" },
-  { "name": "pamdestroyer", "note": "" },
-  { "name": "VIOLANCE", "note": "" },
-  { "name": "909 MARGA", "note": "" },
-  { "name": "MAFIOSO", "note": "" },
-  { "name": "EIGHTY CS CLUB", "note": "" },
-  { "name": "Phantom ReaperZ", "note": "" },
-  { "name": "tw1stic", "note": "" },
-  { "name": "XSTARS", "note": "" },
-  { "name": "MARGA 15", "note": "" },
-  { "name": "sevenx", "note": "" },
-  { "name": "ULTRASORTS", "note": "" },
-  { "name": "mystic", "note": "" },
-  { "name": "NEXSUS", "note": "" },
-  { "name": "18NEVERDIE", "note": "" },
-  { "name": "XEAD CESS", "note": "" },
-  { "name": "LOXIE", "note": "" },
-  { "name": "POKEMON", "note": "" },
-  { "name": "EXTERMINATO", "note": "" },
-  { "name": "volrix", "note": "" },
-  { "name": "GOODREALM", "note": "" },
-  { "name": "KaZuTo", "note": "" },
-  { "name": "TRDH-CEES", "note": "" },
-  { "name": "neverland prime", "note": "" },
-  { "name": "STARNOVA", "note": "" },
-  { "name": "STECU", "note": "" },
-  { "name": "NCX", "note": "" },
-  { "name": "STECU99", "note": "" },
-  { "name": "PRIMEALITE", "note": "" },
-  { "name": "ALLBASE KING SECRET", "note": "" },
-  { "name": "VENXCYURS", "note": "" },
-  { "name": "ANTANIX AREA", "note": "" },
-  { "name": "QUIXOTIC", "note": "" },
-  { "name": "SOCRATES", "note": "" },
-  { "name": "NATHERLANDSS", "note": "" },
-  { "name": "VEX77 NEVERIDE", "note": "" },
-  { "name": "JOMOKERS", "note": "" },
-  { "name": "DOMINION", "note": "" },
-  { "name": "TGM", "note": "" },
-  { "name": "PHANTOM DECAY", "note": "" },
-  { "name": "MARGA 12", "note": "" },
-  { "name": "18PRIDE", "note": "" },
-  { "name": "83", "note": "" },
-  { "name": "NEVERVOS", "note": "" },
-  { "name": "REVERRION", "note": "" },
-  { "name": "UNBETABLE", "note": "" },
-  { "name": "TANG SECT", "note": "" },
-  { "name": "MINIONS", "note": "" },
-  { "name": "MARGA 25", "note": "" },
-  { "name": "SEVENSIX", "note": "" },
-  { "name": "NOCTISMORS", "note": "" },
-  { "name": "DOWSKIE", "note": "" },
-  { "name": "VOLTAZE", "note": "" },
-  { "name": "REAPERS", "note": "" },
-  { "name": "AVENGERS", "note": "NGILANG" },
-  { "name": "DUTTPRIDE", "note": "" },
-  { "name": "ASCRUZ", "note": "" },
-  { "name": "SATAXUS", "note": "ownernya hbis minum arak 10 botol" },
-  { "name": "KSK TEAM", "note": "" },
-  { "name": "BESAGA", "note": "" },
-  { "name": "VOLTASE", "note": "" },
-  { "name": "VOLTRA", "note": "" },
-  { "name": "MIDEWAY", "note": "" },
-  { "name": "LENOX13", "note": "" },
-  { "name": "ZIZUH", "note": "" },
-  { "name": "GLAZER", "note": "" },
-  { "name": "NOURXTIVEN", "note": "" },
-  { "name": "KALCER R ARE", "note": "kaga terima kalo dis kocak anj" },
-  { "name": "77HARVEST", "note": "" },
-  { "name": "N3CKDEEP", "note": "" },
-  { "name": "LIONS", "note": "" },
-  { "name": "NEVERDIE", "note": "" },
-  { "name": "TOXICITY", "note": "" },
-  { "name": "401", "note": "" },
-  { "name": "ZERELETHAL", "note": "" },
-  { "name": "77 Harvest", "note": "" },
-  { "name": "ASTRALCEES", "note": "" },
-  { "name": "9A9 AREA", "note": "" },
-  { "name": "SLINSE ALLBASE", "note": "" },
-  { "name": "SALVATRIX17", "note": "" },
-  { "name": "savael", "note": "" }
+  {
+    "name": "18NEVERDIE",
+    "note": ""
+  },
+  {
+    "name": "18PRIDE",
+    "note": ""
+  },
+  {
+    "name": "401",
+    "note": ""
+  },
+  {
+    "name": "4GEORCOUS",
+    "note": ""
+  },
+  {
+    "name": "77 Harvest",
+    "note": ""
+  },
+  {
+    "name": "77HARVEST",
+    "note": ""
+  },
+  {
+    "name": "83",
+    "note": ""
+  },
+  {
+    "name": "909 MARGA",
+    "note": ""
+  },
+  {
+    "name": "911 PRIDE",
+    "note": ""
+  },
+  {
+    "name": "9A9 AREA",
+    "note": ""
+  },
+  {
+    "name": "ACUMALAKA",
+    "note": ""
+  },
+  {
+    "name": "ALL THREE",
+    "note": ""
+  },
+  {
+    "name": "ALLBASE KING SECRET",
+    "note": ""
+  },
+  {
+    "name": "ANTANIX AREA",
+    "note": ""
+  },
+  {
+    "name": "ARCHARY",
+    "note": ""
+  },
+  {
+    "name": "ASCRUZ",
+    "note": ""
+  },
+  {
+    "name": "ASTRALCEES",
+    "note": ""
+  },
+  {
+    "name": "AUSTRALIA",
+    "note": ""
+  },
+  {
+    "name": "AVENGERS",
+    "note": "NGILANG"
+  },
+  {
+    "name": "BESAGA",
+    "note": ""
+  },
+  {
+    "name": "BLACK ROSE",
+    "note": ""
+  },
+  {
+    "name": "BRUTAL CS",
+    "note": ""
+  },
+  {
+    "name": "clipsey starr",
+    "note": ""
+  },
+  {
+    "name": "DOMINION",
+    "note": ""
+  },
+  {
+    "name": "DOWSKIE",
+    "note": ""
+  },
+  {
+    "name": "DREAMER",
+    "note": ""
+  },
+  {
+    "name": "DUTTPRIDE",
+    "note": ""
+  },
+  {
+    "name": "EIGHTY CS CLUB",
+    "note": ""
+  },
+  {
+    "name": "EXANNATOS",
+    "note": ""
+  },
+  {
+    "name": "EXTERMINATO",
+    "note": ""
+  },
+  {
+    "name": "FIGHTER",
+    "note": ""
+  },
+  {
+    "name": "𝙁𝙇𝙊𝙓𝙓𝙄",
+    "note": ""
+  },
+  {
+    "name": "FORIUS",
+    "note": ""
+  },
+  {
+    "name": "GENESIS",
+    "note": ""
+  },
+  {
+    "name": "GLAZER",
+    "note": ""
+  },
+  {
+    "name": "GOODREALM",
+    "note": ""
+  },
+  {
+    "name": "HAOTIAN",
+    "note": ""
+  },
+  {
+    "name": "INVESTARS44",
+    "note": ""
+  },
+  {
+    "name": "INVICTUS",
+    "note": ""
+  },
+  {
+    "name": "JOMOKERS",
+    "note": ""
+  },
+  {
+    "name": "KALCER R ARE",
+    "note": "kaga terima kalo dis kocak anj"
+  },
+  {
+    "name": "KaZuTo",
+    "note": ""
+  },
+  {
+    "name": "KSK TEAM",
+    "note": ""
+  },
+  {
+    "name": "LAVEXRAN",
+    "note": ""
+  },
+  {
+    "name": "LENOX13",
+    "note": ""
+  },
+  {
+    "name": "LIONS",
+    "note": ""
+  },
+  {
+    "name": "LOXIE",
+    "note": ""
+  },
+  {
+    "name": "MAFIOSO",
+    "note": ""
+  },
+  {
+    "name": "MARGA 12",
+    "note": ""
+  },
+  {
+    "name": "MARGA 15",
+    "note": ""
+  },
+  {
+    "name": "MARGA 17 KW",
+    "note": ""
+  },
+  {
+    "name": "MARGA 24",
+    "note": "KACUNG GAADA PERLAWANAN"
+  },
+  {
+    "name": "MARGA 244",
+    "note": ""
+  },
+  {
+    "name": "MARGA 25",
+    "note": ""
+  },
+  {
+    "name": "MBOJO STARS",
+    "note": ""
+  },
+  {
+    "name": "MIDEWAY",
+    "note": ""
+  },
+  {
+    "name": "MINIONS",
+    "note": ""
+  },
+  {
+    "name": "mystic",
+    "note": ""
+  },
+  {
+    "name": "N3CKDEEP",
+    "note": ""
+  },
+  {
+    "name": "NAMIKAZE25",
+    "note": ""
+  },
+  {
+    "name": "NARVY 2K25",
+    "note": ""
+  },
+  {
+    "name": "NATHERLANDSS",
+    "note": ""
+  },
+  {
+    "name": "NCX",
+    "note": ""
+  },
+  {
+    "name": "Nelvence",
+    "note": ""
+  },
+  {
+    "name": "NEVERDIE",
+    "note": ""
+  },
+  {
+    "name": "neverland prime",
+    "note": ""
+  },
+  {
+    "name": "NEVERLUS",
+    "note": ""
+  },
+  {
+    "name": "NEVERMIN",
+    "note": ""
+  },
+  {
+    "name": "NEVEROR JR",
+    "note": ""
+  },
+  {
+    "name": "NEVERVOS",
+    "note": ""
+  },
+  {
+    "name": "NEXSTALEVERZ",
+    "note": ""
+  },
+  {
+    "name": "NEXSUS",
+    "note": ""
+  },
+  {
+    "name": "NEXSYLEN",
+    "note": ""
+  },
+  {
+    "name": "NJ",
+    "note": ""
+  },
+  {
+    "name": "NOCTISMORS",
+    "note": ""
+  },
+  {
+    "name": "NOCURE",
+    "note": ""
+  },
+  {
+    "name": "NOTFACE",
+    "note": ""
+  },
+  {
+    "name": "NOURXTIVEN",
+    "note": ""
+  },
+  {
+    "name": "NOXFOURTY",
+    "note": ""
+  },
+  {
+    "name": "pamdestroyer",
+    "note": ""
+  },
+  {
+    "name": "PETARUNK",
+    "note": ""
+  },
+  {
+    "name": "PHANTOM DECAY",
+    "note": ""
+  },
+  {
+    "name": "Phantom ReaperZ",
+    "note": ""
+  },
+  {
+    "name": "POKEMON",
+    "note": ""
+  },
+  {
+    "name": "PRIMEALITE",
+    "note": ""
+  },
+  {
+    "name": "QUIXOTIC",
+    "note": ""
+  },
+  {
+    "name": "RBBS NEW ERA",
+    "note": ""
+  },
+  {
+    "name": "REAPERS",
+    "note": ""
+  },
+  {
+    "name": "REMINDER",
+    "note": ""
+  },
+  {
+    "name": "REVERRION",
+    "note": ""
+  },
+  {
+    "name": "SALVATRIX17",
+    "note": ""
+  },
+  {
+    "name": "SATAXUS",
+    "note": "ownernya hbis minum arak 10 botol"
+  },
+  {
+    "name": "savael",
+    "note": ""
+  },
+  {
+    "name": "SEVENSIX",
+    "note": ""
+  },
+  {
+    "name": "sevenx",
+    "note": ""
+  },
+  {
+    "name": "SG NEW",
+    "note": ""
+  },
+  {
+    "name": "SILENTLITE",
+    "note": ""
+  },
+  {
+    "name": "SLINSE ALLBASE",
+    "note": ""
+  },
+  {
+    "name": "SOCRATES",
+    "note": ""
+  },
+  {
+    "name": "STARNOVA",
+    "note": ""
+  },
+  {
+    "name": "STECU",
+    "note": ""
+  },
+  {
+    "name": "STECU99",
+    "note": ""
+  },
+  {
+    "name": "TANG SECT",
+    "note": ""
+  },
+  {
+    "name": "TGM",
+    "note": ""
+  },
+  {
+    "name": "TOXICITY",
+    "note": ""
+  },
+  {
+    "name": "TRDH-CEES",
+    "note": ""
+  },
+  {
+    "name": "tw1stic",
+    "note": ""
+  },
+  {
+    "name": "ULTRASORTS",
+    "note": ""
+  },
+  {
+    "name": "UNBETABLE",
+    "note": ""
+  },
+  {
+    "name": "VAMPIRE",
+    "note": ""
+  },
+  {
+    "name": "VARNIY 2K25",
+    "note": ""
+  },
+  {
+    "name": "VENXCYURS",
+    "note": ""
+  },
+  {
+    "name": "VENXCYURS",
+    "note": ""
+  },
+  {
+    "name": "VEX77 NEVERIDE",
+    "note": ""
+  },
+  {
+    "name": "VILENZSYTAR",
+    "note": ""
+  },
+  {
+    "name": "VIOLANCE",
+    "note": ""
+  },
+  {
+    "name": "VIOLANCE 7",
+    "note": ""
+  },
+  {
+    "name": "VIPERCEES INTI",
+    "note": ""
+  },
+  {
+    "name": "VLEXTNDER",
+    "note": ""
+  },
+  {
+    "name": "VLOXOEE",
+    "note": ""
+  },
+  {
+    "name": "VOLNAITE",
+    "note": ""
+  },
+  {
+    "name": "volrix",
+    "note": ""
+  },
+  {
+    "name": "VOLTASE",
+    "note": ""
+  },
+  {
+    "name": "VOLTAZE",
+    "note": ""
+  },
+  {
+    "name": "VOLTRA",
+    "note": ""
+  },
+  {
+    "name": "VOXCAN",
+    "note": ""
+  },
+  {
+    "name": "XC",
+    "note": ""
+  },
+  {
+    "name": "XEAD CESS",
+    "note": ""
+  },
+  {
+    "name": "XSTARS",
+    "note": ""
+  },
+  {
+    "name": "ZERELETHAL",
+    "note": ""
+  },
+  {
+    "name": "ZIZUH",
+    "note": ""
+  }
 ]
