@@ -3,6 +3,7 @@ const qrTerminal = require('qrcode-terminal');
 const QRCode = require('qrcode');
 const http = require('http');
 const { handleMessage, handleGroupJoin, handleGroupLeave } = require('./commands/handler');
+const { loadLevels } = require('./commands/fun/social');
 
 console.log('╔══════════════════════════════════╗');
 console.log('║    🤖 WA-BOT — Full Fitur        ║');
@@ -181,6 +182,9 @@ function createClient() {
     console.log(`⏰ Waktu: ${new Date().toLocaleString('id-ID')}`);
     console.log(`🔄 Total restart: ${restartCount}`);
     console.log('\n💡 Ketik !help di WhatsApp untuk melihat semua perintah\n');
+
+    // Load persistent data
+    await loadLevels();
   });
 
   // ── INCOMING MESSAGE ──

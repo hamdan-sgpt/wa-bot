@@ -36,11 +36,15 @@ async function main() {
   const rolesBinId = await createBin('wa-bot-roles', rolesInitial);
   console.log(`✅ Bin Roles dibuat! ID: ${rolesBinId}`);
 
+  const levelsBinId = await createBin('wa-bot-levels', { _init: true });
+  console.log(`✅ Bin Levels dibuat! ID: ${levelsBinId}`);
+
   console.log('\n========================================');
-  console.log('📋 Copy 3 variable ini ke Railway:\n');
+  console.log('📋 Copy 4 variable ini ke Railway:\n');
   console.log(`JSONBIN_API_KEY=${API_KEY}`);
   console.log(`JSONBIN_BABU_BIN_ID=${babuBinId}`);
   console.log(`JSONBIN_ROLES_BIN_ID=${rolesBinId}`);
+  console.log(`JSONBIN_LEVELS_BIN_ID=${levelsBinId}`);
   console.log('========================================\n');
 }
 

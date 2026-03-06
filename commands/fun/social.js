@@ -1,15 +1,63 @@
 const { MessageMedia } = require('whatsapp-web.js');
 const axios = require('axios');
+const { readBin, writeBin } = require('../../utils/jsonbin');
 
 // ═══════════════════════════════════════════════════════════════
 //  IN-MEMORY STATE
 // ═══════════════════════════════════════════════════════════════
+
+const LEVELS_BIN_ID = process.env.JSONBIN_LEVELS_BIN_ID;
 
 // AFK: userId => { reason, since }
 const afkUsers = new Map();
 
 // Leveling: `${groupId}_${userId}` => { xp, level, messages, lastXpTime }
 const userLevels = new Map();
+let levelsLoaded = false;
+
+/**
+ * Load level data dari JSONBin ke userLevels Map
+ * Dipanggil sekali saat bot ready
+ */
+async function loadLevels() {
+  if (!LEVELS_BIN_ID) {
+    console.warn('⚠️ JSONBIN_LEVELS_BIN_ID not set! Level data hanya di memory.');
+    levelsLoaded = true;
+    return;
+  }
+  try {
+    const data = await readBin(LEVELS_BIN_ID);
+    if (data && typeof data === 'object') {
+      for (const [key, val] of Object.entries(data)) {
+        userLevels.set(key, val);
+      }
+      console.log(`📊 Loaded ${userLevels.size} level entries from JSONBin`);
+    }
+    levelsLoaded = true;
+  } catch (err) {
+    console.error('⚠️ Error loading levels from JSONBin:', err.message);
+    levelsLoaded = true;
+  }
+}
+
+/**
+ * Save semua level data ke JSONBin
+ * Dipanggil otomatis setiap ada level up
+ */
+async function saveLevels() {
+  if (!LEVELS_BIN_ID) {
+    return;
+  }
+  try {
+    const obj = {};
+    for (const [key, val] of userLevels.entries()) {
+      obj[key] = { xp: val.xp, level: val.level, messages: val.messages, lastXpTime: val.lastXpTime };
+    }
+    await writeBin(LEVELS_BIN_ID, obj);
+  } catch (err) {
+    console.error('⚠️ Error saving levels to JSONBin:', err.message);
+  }
+}
 
 // XP Config
 const XP_PER_MSG = [15, 25]; // random range
@@ -252,6 +300,9 @@ async function processXp(msg, chat) {
     levelUpMsg += `\n📊 Total XP: *${data.xp}*`;
 
     await chat.sendMessage(levelUpMsg, { mentions: [userId] });
+
+    // Auto-save level data ke JSONBin setiap level up
+    saveLevels();
   }
 }
 
@@ -665,6 +716,7 @@ module.exports = {
   afkUsers,
 
   // Leveling
+  loadLevels,
   processXp,
   showLevel,
   leaderboard,
