@@ -4,6 +4,73 @@ function initMatches(groupData) {
   if (!groupData.matches) {
     groupData.matches = { 1: [], 2: [], 3: [] };
   }
+  if (!groupData.warTitle) {
+    groupData.warTitle = '';
+  }
+}
+
+async function createWar(client, msg, args) {
+  const chat = await msg.getChat();
+  const groupData = getGroupData(chat.id._serialized);
+  
+  if (args.length < 2) {
+    return msg.reply('❌ Format salah!\nContoh: *!createwar Sparing vs Guild Sebelah*');
+  }
+  
+  const title = args.slice(1).join(' ');
+  
+  // Reset pertandingan dan simpan judul
+  groupData.matches = { 1: [], 2: [], 3: [] };
+  groupData.warTitle = title;
+  saveGroupData(chat.id._serialized, groupData);
+  
+  // Siapkan hidetag ke semua member
+  const participants = chat.participants;
+  let mentionIds = [];
+  participants.forEach(p => mentionIds.push(p.id._serialized));
+  
+  const announcementText = 
+    `╔══════════════════════╗\n` +
+    `║  📢 *OPEN MATCH: CIRCLE WAR* ║\n` +
+    `╚══════════════════════╝\n\n` +
+    `⚔️ *${title.toUpperCase()}*\n\n` +
+    `Silakan list nama kalian sekarang!\n` +
+    `» Ketik \`!joinmatch 1\` untuk Match 1\n` +
+    `» Ketik \`!joinmatch 2\` untuk Match 2\n` +
+    `» Ketik \`!joinmatch 3\` untuk Match 3\n\n` +
+    `Cek status antrean: \`!listmatch\`\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━`;
+  
+  await chat.sendMessage(announcementText, { mentions: mentionIds });
+}
+
+async function startWar(client, msg) {
+  const chat = await msg.getChat();
+  const groupData = getGroupData(chat.id._serialized);
+  initMatches(groupData);
+  
+  let playerIds = new Set(); // Pakai Set untuk menghindari tag ganda
+  
+  for (let i = 1; i <= 3; i++) {
+    groupData.matches[i].forEach(id => playerIds.add(id));
+  }
+  
+  if (playerIds.size === 0) {
+    return msg.reply('❌ Belum ada player yang join di match mana pun!');
+  }
+  
+  const titleText = groupData.warTitle ? `*${groupData.warTitle.toUpperCase()}*` : '*WAR*';
+  const mentionIds = Array.from(playerIds);
+  
+  const alertText = 
+    `╔══════════════════════╗\n` +
+    `║  🔥 *MATCH WILL START!*   ║\n` +
+    `╚══════════════════════╝\n\n` +
+    `⚔️ ${titleText} akan segera dimulai!\n\n` +
+    `Bagi para player yang sudah terdaftar di list, harap segera *login/standby* di in-game sekarang juga!\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━`;
+  
+  await chat.sendMessage(alertText, { mentions: mentionIds });
 }
 
 async function joinMatch(msg, args) {
@@ -73,7 +140,8 @@ async function listMatch(client, msg) {
   const groupData = getGroupData(chat.id._serialized);
   initMatches(groupData);
   
-  let result = '⚔️ *LIST MATCH CIRCLE WAR* ⚔️\n';
+  let titleStr = groupData.warTitle ? `*MATCH: ${groupData.warTitle.toUpperCase()}*` : '*LIST MATCH CIRCLE WAR*';
+  let result = `⚔️ ${titleStr} ⚔️\n`;
   let mentions = [];
   
   for (let i = 1; i <= 3; i++) {
@@ -98,11 +166,12 @@ async function resetMatch(msg) {
   const chat = await msg.getChat();
   const groupData = getGroupData(chat.id._serialized);
   
-  // Reset all matches
+  // Reset all matches and title
   groupData.matches = { 1: [], 2: [], 3: [] };
+  groupData.warTitle = '';
   saveGroupData(chat.id._serialized, groupData);
   
   await msg.reply('🧹 *Semua daftar Match berhasil direset!*');
 }
 
-module.exports = { joinMatch, leaveMatch, listMatch, resetMatch };
+module.exports = { createWar, joinMatch, leaveMatch, listMatch, startWar, resetMatch };

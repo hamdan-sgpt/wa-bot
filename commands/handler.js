@@ -4,7 +4,7 @@ const { tagAll, tagAdmin, tagGroup } = require('./group/tagall');
 const { handleAntiLink } = require('./group/antilink');
 const { handleAntiSpam } = require('./group/antispam');
 const { addBabu, listBabu, delBabu, addBabuNote } = require('./group/babu');
-const { joinMatch, leaveMatch, listMatch, resetMatch } = require('./group/circlewar');
+const { createWar, joinMatch, leaveMatch, listMatch, startWar, resetMatch } = require('./group/circlewar');
 const { aiChat, aiCharge, aiCredits, aiReset } = require('./fun/ai');
 const { dice, flip, randomQuote, calculator, ping, rps, tebakAngka, truth, dare, tod, eightBall, rate, ship, siapakah, slot, trivia, meme, roast, puisi, zodiak } = require('./fun/games');
 const { toSticker, toImage, stickerText } = require('./fun/sticker');
@@ -151,19 +151,24 @@ async function handleMessage(client, msg) {
   }
 
   // ── CIRCLE WAR MATCH COMMANDS ──
-  if (['joinmatch', 'leavematch', 'listmatch', 'resetmatch'].includes(cmd)) {
+  if (['createwar', 'joinmatch', 'leavematch', 'listmatch', 'startwar', 'resetmatch'].includes(cmd)) {
     if (!isGroup) return msg.reply('❌ Perintah ini hanya bisa digunakan di dalam grup!');
     
     switch (cmd) {
       case 'joinmatch': await joinMatch(msg, args); break;
       case 'leavematch': await leaveMatch(msg, args); break;
       case 'listmatch': await listMatch(client, msg); break;
+      case 'createwar':
+      case 'startwar':
       case 'resetmatch': 
          const participants = chat.participants;
          const senderParticipant = participants.find(p => p.id._serialized === senderId);
          const isAdmin = senderParticipant?.isAdmin || senderParticipant?.isSuperAdmin || isOwner;
          if (!isAdmin) return msg.reply('❌ Perintah ini hanya untuk admin grup!');
-         await resetMatch(msg); 
+         
+         if (cmd === 'createwar') await createWar(client, msg, args);
+         else if (cmd === 'startwar') await startWar(client, msg);
+         else await resetMatch(msg); 
          break;
     }
     return;
