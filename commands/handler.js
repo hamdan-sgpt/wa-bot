@@ -151,7 +151,7 @@ async function handleMessage(client, msg) {
   }
 
   // ── CIRCLE WAR MATCH COMMANDS ──
-  if (['createwar', 'joinmatch', 'leavematch', 'listmatch', 'startwar', 'resetmatch'].includes(cmd)) {
+  if (['createwar', 'joinmatch', 'leavematch', 'listmatch', 'startwar', 'closewar', 'resetmatch'].includes(cmd)) {
     if (!isGroup) return msg.reply('❌ Perintah ini hanya bisa digunakan di dalam grup!');
     
     switch (cmd) {
@@ -160,6 +160,7 @@ async function handleMessage(client, msg) {
       case 'listmatch': await listMatch(client, msg); break;
       case 'createwar':
       case 'startwar':
+      case 'closewar':
       case 'resetmatch': 
          const participants = chat.participants;
          const senderParticipant = participants.find(p => p.id._serialized === senderId);
@@ -167,7 +168,8 @@ async function handleMessage(client, msg) {
          if (!isAdmin) return msg.reply('❌ Perintah ini hanya untuk admin grup!');
          
          if (cmd === 'createwar') await createWar(client, msg, args);
-         else if (cmd === 'startwar') await startWar(client, msg);
+         else if (cmd === 'startwar') await startWar(client, msg, args);
+         else if (cmd === 'closewar') await require('./group/circlewar').closeWar(msg, args);
          else await resetMatch(msg); 
          break;
     }
